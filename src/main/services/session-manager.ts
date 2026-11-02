@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { stat } from 'node:fs/promises'
 import type { ModelOption } from '../../shared/config'
 import type { SessionEvent, SessionStatus } from '../../shared/events'
+import type { SaverOptions } from '../../shared/saver'
 import type { ImageAttachment, PermissionReplyArgs, RewindResult, SessionStartArgs } from '../../shared/ipc'
 import type { PluginRegistry } from './plugin-registry'
 import { BYPASS_DISABLED, startSdkSession, type AdapterSession, type PermissionModeName } from './sdk-adapter'
@@ -17,6 +18,8 @@ export interface SessionManagerDeps {
   allowBypass?: () => boolean
   /** Reads the claudeInChrome preference at call time. Defaults to off. */
   chrome?: () => boolean
+  /** Token-saver options for a new session, or undefined when the mode is off. Read at call time. */
+  saver?: () => SaverOptions | undefined
   /** Receives every SDK rate_limit_info from any session (usage-limit bars). */
   onRateLimitInfo?: (info: unknown) => void
 }
@@ -55,6 +58,9 @@ export class SessionManager {
     for (const d of extraDirs) await assertDirectory(d)
     if (this.sessions.size >= MAX_SESSIONS) throw new Error(`Session cap reached (${MAX_SESSIONS})`)
     const allowBypass = this.deps.allowBypass?.() === true
+    const saver = this.deps.saver?.()
+    // An explicit model for this chat always beats the saver's cheaper default.
+    const model = args.model && args.model !== 'default' ? args.model : saver?.model
     if (args.permissionMode === 'bypassPermissions' && !allowBypass) throw new Error(BYPASS_DISABLED)
     const localId = randomUUID()
     const live = { localId, cwd: args.cwd, tasks: new Set<string>() } as LiveSession
@@ -69,7 +75,8 @@ export class SessionManager {
         ...(extraDirs.length ? { additionalDirectories: extraDirs } : {}),
         // Summarized adaptive thinking: without it the CLI returns thinking blocks with empty text.
         thinking: true,
-        ...(args.model ? { model: args.model } : {}),
+        ...(model ? { model } : {}),
+        ...(saver ? { saver } : {}),
         ...(args.permissionMode ? { permissionMode: args.permissionMode } : {}),
         ...(allowBypass ? { allowBypass: true } : {}),
         ...(this.deps.chrome?.() === true ? { chrome: true } : {}),

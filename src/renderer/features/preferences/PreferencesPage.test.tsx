@@ -22,7 +22,7 @@ const info = {
 
 let set: ReturnType<typeof vi.fn>
 
-function setup(hotkeyError?: string) {
+function setup(hotkeyError?: string, initial: Partial<AppPrefs> = {}) {
   set = vi.fn(async (patch: { hotkey?: { enabled?: boolean } }): Promise<PrefsSetResult> => {
     const prefs: AppPrefs = structuredClone(DEFAULT_PREFS)
     return {
@@ -36,7 +36,7 @@ function setup(hotkeyError?: string) {
     }
   })
   ;(window as unknown as { ccwrap: unknown }).ccwrap = {
-    prefs: { get: vi.fn(async () => structuredClone(DEFAULT_PREFS)), set, onChanged: vi.fn(() => () => {}) },
+    prefs: { get: vi.fn(async () => ({ ...structuredClone(DEFAULT_PREFS), ...initial })), set, onChanged: vi.fn(() => () => {}) },
     app: { info: vi.fn(async () => info) },
     update: {
       getState: vi.fn(async () => ({ kind: 'uptodate' })),
@@ -94,6 +94,23 @@ describe('PreferencesPage', () => {
     expect(t.getAttribute('aria-checked')).toBe('false')
     await userEvent.click(t)
     expect(set).toHaveBeenLastCalledWith({ toolCardsExpanded: true })
+  })
+
+  it('ultra saver: parts are disabled until the mode is on, then toggle individually', async () => {
+    setup()
+    const master = await screen.findByTestId('ultra-saver')
+    expect(master.getAttribute('aria-checked')).toBe('false')
+    expect((screen.getByTestId('saver-model') as HTMLButtonElement).disabled).toBe(true)
+    await userEvent.click(master)
+    expect(set).toHaveBeenLastCalledWith({ ultraSaver: true })
+  })
+
+  it('ultra saver parts send a minimal nested patch', async () => {
+    setup(undefined, { ultraSaver: true })
+    const model = await screen.findByTestId('saver-model')
+    await waitFor(() => expect((model as HTMLButtonElement).disabled).toBe(false))
+    await userEvent.click(model)
+    expect(set).toHaveBeenLastCalledWith({ ultraSaverParts: { model: false } })
   })
 
   it('commits the threshold on blur, clamped', async () => {

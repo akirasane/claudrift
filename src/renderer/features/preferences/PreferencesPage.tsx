@@ -428,6 +428,37 @@ export function PreferencesPage(): React.JSX.Element {
                 />
               </Row>
             </Section>
+            <Section id="saver" title="Ultra token saver">
+              <Row
+                label="Ultra token saver"
+                hint="Cuts spend on new chats with the parts below. Chats already running keep their settings. Also switchable from the status bar."
+                htmlFor="ultra-saver"
+              >
+                <Toggle
+                  id="ultra-saver"
+                  checked={prefs.ultraSaver}
+                  data-testid="ultra-saver"
+                  onCheckedChange={(v) => void set({ ultraSaver: v })}
+                />
+              </Row>
+              {(
+                [
+                  ['caveman', 'Terse replies (caveman ultra)', 'Needs the caveman plugin. Sets its mode to ultra for the session; replies are about half as long.'],
+                  ['model', 'Cheaper model, low effort, no extended thinking', 'New chats start on Haiku unless you pick a model for that chat. Weaker on hard tasks.'],
+                  ['compact', 'Compact early (100k tokens)', 'Summarizes old turns sooner so long chats stop re-sending a huge history.']
+                ] as const
+              ).map(([key, label, hint]) => (
+                <Row key={key} label={label} hint={hint} htmlFor={`saver-${key}`}>
+                  <Toggle
+                    id={`saver-${key}`}
+                    checked={prefs.ultraSaverParts[key]}
+                    disabled={!prefs.ultraSaver}
+                    data-testid={`saver-${key}`}
+                    onCheckedChange={(v) => void set({ ultraSaverParts: { [key]: v } })}
+                  />
+                </Row>
+              ))}
+            </Section>
             <Section id="chat" title="Conversation">
               <Row
                 label="Expand tool cards by default"

@@ -171,3 +171,38 @@ describe('SessionManager extra directories', () => {
     }
   })
 })
+
+describe('SessionManager token saver', () => {
+  const saver = { env: { CAVEMAN_DEFAULT_MODE: 'ultra' }, model: 'haiku', effort: 'low' as const, disableThinking: true }
+
+  it('passes the saver and its model to a new session, read at call time', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    try {
+      const startSession = vi.fn(async () => fakeAdapter())
+      let current: typeof saver | undefined
+      const m = new SessionManager(() => {}, { startSession, saver: () => current })
+      await m.start({ cwd: dir, prompt: 'hi' })
+      expect((startSession.mock.calls as unknown[][])[0]![0] as object).not.toHaveProperty('saver')
+      expect((startSession.mock.calls as unknown[][])[0]![0] as object).not.toHaveProperty('model')
+      current = saver
+      await m.start({ cwd: dir, prompt: 'hi' })
+      expect(startSession).toHaveBeenLastCalledWith(expect.objectContaining({ saver, model: 'haiku' }))
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('an explicit model for the chat beats the saver model; "default" does not', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    try {
+      const startSession = vi.fn(async () => fakeAdapter())
+      const m = new SessionManager(() => {}, { startSession, saver: () => saver })
+      await m.start({ cwd: dir, prompt: 'hi', model: 'opus' })
+      expect(startSession).toHaveBeenLastCalledWith(expect.objectContaining({ model: 'opus', saver }))
+      await m.start({ cwd: dir, prompt: 'hi', model: 'default' })
+      expect(startSession).toHaveBeenLastCalledWith(expect.objectContaining({ model: 'haiku' }))
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})

@@ -54,3 +54,13 @@ Known gap: after `/clear` the CLI may start a new session id; `meta.sessionId` i
 - Gotcha: with cwd = the user's home, project-scope settings resolve to the same file as user settings, so `enabled` read back wrongly in the sandbox. With no project selected the CLI now runs from the OS temp dir.
 - Names and sources become CLI arguments, so the schema rejects anything starting with `-`, whitespace in ids, and newlines. Installing and adding a marketplace both show a trust warning (plugins can run hooks and MCP servers).
 - Mutations are serialized. Changes only reach new sessions.
+
+## Ultra token saver
+
+What `/context` showed for a fresh session (CLI 2.1.312): about 15k tokens in total (system tools 3.8k, deferred tools 13.5k not sent up front, skills 9.9k, agents 1.2k). Findings that shaped the mode:
+
+- **Trimming input saves nothing worth the cost.** `extraArgs: {'strict-mcp-config': null}` changed nothing (MCP tools are already deferred). `settingSources: ['project']` saved about 1k but drops the user's settings, hooks and CLAUDE.md. `skills: []` only moved the same tokens into the Skill tool. So there is no "lean session" part.
+- **What moves spend:** reply length, thinking, the model's price, and a history that keeps growing. Parts: (1) caveman ultra, (2) Haiku + `effort: 'low'` + `thinking: {type: 'disabled'}` (an explicit per-chat model wins), (3) `settings: {autoCompactWindow: 100000}`.
+- **Caveman ultra without touching its files:** the plugin's `getDefaultMode` reads `CAVEMAN_DEFAULT_MODE` first. The app sets it in the session's `env` (spread over `process.env`, since `env` replaces the child's environment). The `ultra` value maps to `ultracave`.
+- **A/B, same prompt, fresh session:** saver off: Sonnet, 725 output tokens, 1,498 chars, $0.0732. Saver on: Haiku, 441 output tokens, 779 chars, $0.0727. A fresh session's cost is mostly the prompt-cache write, so the saving shows over longer chats (shorter replies, no thinking tokens, compaction), not on a single short turn.
+- Applies to new sessions only: environment, model and effort are fixed when the CLI starts.

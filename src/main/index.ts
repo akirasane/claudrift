@@ -15,6 +15,7 @@ import { GitService } from './services/git-service'
 import { FileSearchService } from './services/file-search'
 import { LimitsService } from './services/limits-service'
 import { UsageProbe } from './services/usage-probe'
+import { saverOptions } from '../shared/saver'
 import { HotkeyService } from './services/hotkey-service'
 import { NotificationService } from './services/notification-service'
 import { PluginRegistry } from './services/plugin-registry'
@@ -98,7 +99,7 @@ const manager: SessionManager = new SessionManager(
     notifications.onSessionEvent(localId, event)
     ledger.onSessionEvent(localId, event, manager.info(localId))
   },
-  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, onRateLimitInfo: (info) => limits.ingest(info) }
+  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info) }
 )
 const notifications = new NotificationService({ getWindow, prefs, manager })
 const autoResume = new AutoResumeMain({ powerSave: powerSaveBlocker, announce: (r) => notifications.announce(r) })

@@ -12,6 +12,7 @@ import type {
   SDKUserMessage
 } from '@anthropic-ai/claude-agent-sdk'
 import type { ImageAttachment, RewindResult } from '../../shared/ipc'
+import type { SaverOptions } from '../../shared/saver'
 import type { ModelOption } from '../../shared/config'
 import type { Block, SessionEvent, SlashCommandInfo, Usage } from '../../shared/events'
 import { limitTypeFromText, looksLikeUsageLimit, normalizeResetsAt, parseLimitReset } from '../../shared/rate-limit'
@@ -52,6 +53,8 @@ export interface AdapterOptions {
   prompt: string
   /** Images sent with the initial prompt. */
   images?: ImageAttachment[]
+  /** Token-saver mode (shared/saver.ts): extra environment, effort, no thinking, earlier compaction. */
+  saver?: SaverOptions
   /** Extra folders added to the session (`--add-dir`). */
   additionalDirectories?: string[]
   /** UUID stamped on the initial user message (rewind target). */
@@ -686,7 +689,15 @@ export async function startSdkSession(opts: AdapterOptions): Promise<AdapterSess
     ...(opts.additionalDirectories?.length ? { additionalDirectories: opts.additionalDirectories } : {}),
     // Backs up files before Edit/Write so the UI can rewind them. Bash side effects are not tracked.
     enableFileCheckpointing: true,
-    ...(opts.thinking ? { thinking: { type: 'adaptive' as const, display: 'summarized' as const } } : {}),
+    ...(opts.saver?.disableThinking
+      ? { thinking: { type: 'disabled' as const } }
+      : opts.thinking
+        ? { thinking: { type: 'adaptive' as const, display: 'summarized' as const } }
+        : {}),
+    ...(opts.saver?.effort ? { effort: opts.saver.effort } : {}),
+    ...(opts.saver?.autoCompactWindow ? { settings: { autoCompactWindow: opts.saver.autoCompactWindow } } : {}),
+    // `env` replaces the child's environment, so inherit ours first.
+    ...(opts.saver?.env ? { env: { ...process.env, ...opts.saver.env } } : {}),
     permissionMode: (opts.permissionMode ?? 'default') as SdkPermissionMode,
     ...(opts.allowBypass ? { allowDangerouslySkipPermissions: true } : {}),
     ...(opts.model ? { model: opts.model } : {}),

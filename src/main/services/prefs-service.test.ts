@@ -22,6 +22,25 @@ describe('PrefsService', () => {
     expect(p.get().hotkey.enabled).toBe(false)
   })
 
+  it('saver defaults to off with every part on; a partial parts patch keeps the others', async () => {
+    const p = new PrefsService(file)
+    expect(p.get().ultraSaver).toBe(false)
+    expect(p.get().ultraSaverParts).toEqual({ caveman: true, model: true, compact: true })
+    await p.set({ ultraSaver: true, ultraSaverParts: { model: false } })
+    expect(p.get().ultraSaver).toBe(true)
+    expect(p.get().ultraSaverParts).toEqual({ caveman: true, model: false, compact: true })
+    const again = new PrefsService(file)
+    expect(again.get().ultraSaverParts.model).toBe(false)
+  })
+
+  it('an old prefs file without the saver keys loads with the defaults', async () => {
+    await writeFile(file, JSON.stringify({ version: 1, confirmQuitWhileRunning: false }))
+    const p = new PrefsService(file)
+    expect(p.get().confirmQuitWhileRunning).toBe(false)
+    expect(p.get().ultraSaver).toBe(false)
+    expect(p.get().ultraSaverParts).toEqual({ caveman: true, model: true, compact: true })
+  })
+
   it('get() returns a copy, not the live object', () => {
     const p = new PrefsService(file)
     p.get().notifications.enabled = false

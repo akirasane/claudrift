@@ -294,7 +294,9 @@ export const AppPrefsPatchSchema = z
     showLimitsBar: Flag,
     showCavemanBadge: Flag,
     claudeInChrome: Flag,
-    toolCardsExpanded: Flag
+    toolCardsExpanded: Flag,
+    ultraSaver: Flag,
+    ultraSaverParts: z.object({ caveman: Flag, model: Flag, compact: Flag }).partial().strict()
   })
   .partial()
   .strict()

@@ -1,3 +1,4 @@
+import { DEFAULT_SAVER_PARTS, type SaverParts } from './saver'
 // P4 app-level contracts (prefs, auth status). Zod-free so the sandboxed preload can bundle it.
 
 export interface NotificationPrefs {
@@ -36,6 +37,9 @@ export interface AppPrefs {
   claudeInChrome: boolean
   /** Tool cards (Edit, Read, Bash, ...) start expanded. Off: collapsed to their header line. */
   toolCardsExpanded: boolean
+  /** Ultra token-saver mode for new sessions (see shared/saver.ts). */
+  ultraSaver: boolean
+  ultraSaverParts: SaverParts
 }
 
 export const DEFAULT_PREFS: AppPrefs = {
@@ -56,7 +60,9 @@ export const DEFAULT_PREFS: AppPrefs = {
   showLimitsBar: true,
   showCavemanBadge: true,
   claudeInChrome: false,
-  toolCardsExpanded: false
+  toolCardsExpanded: false,
+  ultraSaver: false,
+  ultraSaverParts: { ...DEFAULT_SAVER_PARTS }
 }
 
 export type AppPrefsPatch = {
@@ -70,6 +76,8 @@ export type AppPrefsPatch = {
   showCavemanBadge?: boolean
   claudeInChrome?: boolean
   toolCardsExpanded?: boolean
+  ultraSaver?: boolean
+  ultraSaverParts?: Partial<SaverParts>
 }
 
 /** Renderer -> main (fire-and-forget): drives the pause/resume native notifications and the keep-awake lock. */
