@@ -36,6 +36,11 @@ function DockRow({ convId, task, now }: { convId: string; task: TaskView; now: n
       >
         {task.description || 'Agent'}
         {task.subagentType && <span className="ml-2 text-2xs text-fg-3">{task.subagentType}</span>}
+        {task.summary && (
+          <span data-testid="agent-dock-summary" className="ml-2 text-xs text-fg-3">
+            {task.summary}
+          </span>
+        )}
       </button>
       <span className="flex shrink-0 items-center gap-2 text-xs text-fg-3">
         {task.lastToolName && <span className="font-mono text-fg-2">{task.lastToolName}</span>}

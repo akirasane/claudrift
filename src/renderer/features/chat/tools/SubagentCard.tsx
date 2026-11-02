@@ -1,4 +1,4 @@
-import { Bot, ChevronRight, Square } from 'lucide-react'
+import { Bot, ChevronRight, Sparkles, Square } from 'lucide-react'
 import * as React from 'react'
 import { StatusPill, type StatusPillState } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -176,6 +176,16 @@ export function SubagentCard({ convId, toolUseId, depth = 0, renderItem }: Subag
         )}
         <StatusPill state={pill.state} label={pill.label} />
       </div>
+      {live && task?.summary && (
+        <div
+          data-testid="subagent-summary"
+          aria-live="polite"
+          className="flex items-center gap-1.5 border-t border-border px-3 py-1.5 text-sm text-fg-2"
+        >
+          <Sparkles size={12} aria-hidden className="shrink-0 animate-pulse text-accent-from" />
+          <span className="min-w-0 flex-1 truncate">{task.summary}</span>
+        </div>
+      )}
       {open && (
         <div id={bodyId} data-testid="subagent-body" className="space-y-2 border-t border-border px-3 py-2">
           {hidden > 0 && (

@@ -681,6 +681,8 @@ export async function startSdkSession(opts: AdapterOptions): Promise<AdapterSess
     settingSources: opts.settingSources ?? ['user', 'project', 'local'],
     // Headless sessions hide the task-list tools unless named here; the todo panel needs them. They only edit the list.
     allowedTools: [...TASK_TOOLS],
+    // Subagents stream no deltas or thinking, only whole messages; this adds a periodic one-line "what it is doing now".
+    agentProgressSummaries: true,
     ...(opts.additionalDirectories?.length ? { additionalDirectories: opts.additionalDirectories } : {}),
     // Backs up files before Edit/Write so the UI can rewind them. Bash side effects are not tracked.
     enableFileCheckpointing: true,

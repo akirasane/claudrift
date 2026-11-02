@@ -216,6 +216,26 @@ describe('WorkingRow', () => {
   })
 })
 
+describe('agent progress summary', () => {
+  const taskId = () => Object.keys(useChatStore.getState().convs['c1']!.tasks)[0]!
+
+  it('shows the latest summary on the running card and in the dock, and drops it when the agent ends', () => {
+    put(reduceAll(fresh(), eventFixtures.subagentTurn, T0))
+    render(<ChatView target={target} />)
+    expect(screen.queryByTestId('subagent-summary')).toBeNull()
+    feed({ t: 'task_progress', taskId: taskId(), totalTokens: 100, toolUses: 2, durationMs: 5000, summary: 'Counting exported names' })
+    expect(screen.getByTestId('subagent-summary')).toHaveTextContent('Counting exported names')
+    expect(screen.getByTestId('agent-dock-summary')).toHaveTextContent('Counting exported names')
+    // A later progress event without a summary keeps the last one.
+    feed({ t: 'task_progress', taskId: taskId(), totalTokens: 200, toolUses: 3, durationMs: 9000 })
+    expect(screen.getByTestId('subagent-summary')).toHaveTextContent('Counting exported names')
+    feed({ t: 'task_progress', taskId: taskId(), totalTokens: 300, toolUses: 4, durationMs: 12000, summary: 'Writing the report' })
+    expect(screen.getByTestId('subagent-summary')).toHaveTextContent('Writing the report')
+    feed({ t: 'task_ended', taskId: taskId(), status: 'completed' })
+    expect(screen.queryByTestId('subagent-summary')).toBeNull()
+  })
+})
+
 describe('SubagentCard', () => {
   it('nests children, shows the task numbers, collapses, and Stop calls session.stopTask', async () => {
     put(reduceAll(fresh(), eventFixtures.subagentTurn, T0))
