@@ -293,7 +293,8 @@ export const AppPrefsPatchSchema = z
     autoUpdate: Flag,
     showLimitsBar: Flag,
     showCavemanBadge: Flag,
-    claudeInChrome: Flag
+    claudeInChrome: Flag,
+    toolCardsExpanded: Flag
   })
   .partial()
   .strict()

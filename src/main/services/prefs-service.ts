@@ -29,7 +29,8 @@ const PrefsFileSchema = z.object({
   autoUpdate: z.boolean().optional(),
   showLimitsBar: z.boolean().optional(),
   showCavemanBadge: z.boolean().optional(),
-  claudeInChrome: z.boolean().optional()
+  claudeInChrome: z.boolean().optional(),
+  toolCardsExpanded: z.boolean().optional()
 })
 
 function clean<T extends object>(o: T | undefined): Partial<T> {
@@ -49,7 +50,8 @@ export function mergePrefs(base: AppPrefs, patch: AppPrefsPatch): AppPrefs {
     autoUpdate: patch.autoUpdate ?? base.autoUpdate,
     showLimitsBar: patch.showLimitsBar ?? base.showLimitsBar,
     showCavemanBadge: patch.showCavemanBadge ?? base.showCavemanBadge,
-    claudeInChrome: patch.claudeInChrome ?? base.claudeInChrome
+    claudeInChrome: patch.claudeInChrome ?? base.claudeInChrome,
+    toolCardsExpanded: patch.toolCardsExpanded ?? base.toolCardsExpanded
   }
 }
 

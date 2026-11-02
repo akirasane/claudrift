@@ -88,6 +88,14 @@ describe('PreferencesPage', () => {
     expect(set).toHaveBeenLastCalledWith({ confirmQuitWhileRunning: false })
   })
 
+  it('tool cards default to collapsed and the toggle saves the preference', async () => {
+    setup()
+    const t = await screen.findByTestId('tool-cards-expanded')
+    expect(t.getAttribute('aria-checked')).toBe('false')
+    await userEvent.click(t)
+    expect(set).toHaveBeenLastCalledWith({ toolCardsExpanded: true })
+  })
+
   it('commits the threshold on blur, clamped', async () => {
     setup()
     const input = await screen.findByTestId('turn-done-min')

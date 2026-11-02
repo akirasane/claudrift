@@ -6,6 +6,7 @@ import { eventFixtures as fx } from '@/features/chat/model/fixtures'
 import { useChatStore } from '@/stores/chat-store'
 import { PermissionDialog } from '../permission/PermissionDialog'
 import { ToolCard } from './ToolCard'
+import { resetToolCardPrefsForTest, useToolCardPrefs } from './tool-card-prefs'
 
 const permissionReply = vi.fn(async () => {})
 
@@ -21,6 +22,7 @@ const upTo = (events: SessionEvent[], t: SessionEvent['t']): SessionEvent[] =>
   events.slice(0, events.findIndex((e) => e.t === t) + 1)
 
 beforeEach(() => {
+  resetToolCardPrefsForTest(true) // most tests look inside the body
   permissionReply.mockClear()
   ;(globalThis as unknown as { window: { ccwrap: unknown } }).window.ccwrap = { session: { permissionReply } }
 })
@@ -100,6 +102,44 @@ describe('ToolCard', () => {
     const head = screen.getByRole('button', { expanded: true })
     await userEvent.click(head)
     expect(screen.getByRole('button', { expanded: false })).toBeInTheDocument()
+  })
+})
+
+describe('ToolCard default expansion preference', () => {
+  const mountBash = (): void => {
+    seed([])
+    apply({ t: 'tool_use', toolUseId: 'b1', name: 'Bash', input: { command: 'git status' } })
+    render(<ToolCard convId="c1" toolUseId="b1" />)
+  }
+
+  it('starts collapsed when the preference is off: header only, no body', () => {
+    resetToolCardPrefsForTest(false)
+    mountBash()
+    expect(screen.getByRole('button', { expanded: false })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Run in terminal' })).toBeNull()
+    expect(screen.getByText('Bash')).toBeInTheDocument()
+  })
+
+  it('a collapsed card opens on click', async () => {
+    resetToolCardPrefsForTest(false)
+    mountBash()
+    await userEvent.click(screen.getByRole('button', { expanded: false }))
+    expect(screen.getByRole('button', { name: 'Run in terminal' })).toBeInTheDocument()
+  })
+
+  it('starts expanded when the preference is on', () => {
+    mountBash()
+    expect(screen.getByRole('button', { name: 'Run in terminal' })).toBeInTheDocument()
+  })
+
+  it('changing the preference applies to cards already on screen', () => {
+    resetToolCardPrefsForTest(false)
+    mountBash()
+    expect(screen.queryByRole('button', { name: 'Run in terminal' })).toBeNull()
+    act(() => useToolCardPrefs.getState().set(true))
+    expect(screen.getByRole('button', { name: 'Run in terminal' })).toBeInTheDocument()
+    act(() => useToolCardPrefs.getState().set(false))
+    expect(screen.queryByRole('button', { name: 'Run in terminal' })).toBeNull()
   })
 })
 

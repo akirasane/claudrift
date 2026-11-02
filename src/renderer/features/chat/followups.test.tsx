@@ -1,3 +1,4 @@
+import { resetToolCardPrefsForTest } from './tools/tool-card-prefs'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -213,6 +214,7 @@ describe('truncated history notice', () => {
 
 describe('Run in terminal', () => {
   it('emits the Bash command and cwd on the bus', async () => {
+    resetToolCardPrefsForTest(true)
     const got = vi.fn()
     onRunInTerminal(got)
     seedLive([

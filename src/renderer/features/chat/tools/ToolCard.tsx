@@ -9,6 +9,7 @@ import type { ToolCallView } from '@/features/chat/model/types'
 import { useChatStore } from '@/stores/chat-store'
 import { diffFromToolInput } from '../diff/compute-diff'
 import { DiffView } from '../diff/DiffView'
+import { useToolCardsExpanded } from './tool-card-prefs'
 import { argSummary, formatDuration, resultLineCount } from './tool-format'
 import { TruncatedText } from './TruncatedText'
 
@@ -152,7 +153,10 @@ function Meta({ tool, now }: { tool: ToolCallView; now: number }): React.JSX.Ele
 export function ToolCard({ convId, toolUseId }: { convId: string; toolUseId: string }): React.JSX.Element | null {
   const tool = useChatStore((s) => s.convs[convId]?.tools[toolUseId])
   const cwd = useChatStore((s) => s.convs[convId]?.cwd ?? '')
-  const [open, setOpen] = React.useState(true)
+  const expandedPref = useToolCardsExpanded()
+  const [open, setOpen] = React.useState(expandedPref)
+  // Flipping the preference applies to cards already on screen too.
+  React.useEffect(() => setOpen(expandedPref), [expandedPref])
   const wasActive = React.useRef(false)
   const status = tool?.status
   const now = useNow(status === 'running')

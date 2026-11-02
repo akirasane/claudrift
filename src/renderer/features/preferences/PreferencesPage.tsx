@@ -3,6 +3,7 @@ import * as React from 'react'
 import type { AppPrefs, AppPrefsPatch, HotkeyStatus } from '@shared/app'
 import type { ShellId, ShellProfile } from '@shared/config'
 import type { AppInfo } from '@shared/events'
+import { useToolCardPrefs } from '../chat/tools/tool-card-prefs'
 import { useModePrefs } from '@/features/chat/mode/mode-prefs'
 import { Button, Input, Toggle, fieldClass } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -66,6 +67,7 @@ function usePrefs() {
         const res = await window.ccwrap.prefs.set(patch)
         qc.setQueryData(PREFS_KEY, res.prefs)
         useModePrefs.getState().set(res.prefs.allowBypassMode === true)
+        useToolCardPrefs.getState().set(res.prefs.toolCardsExpanded === true)
         setHotkey(res.hotkey)
       } catch (err) {
         setSaveError(err instanceof Error ? err.message : 'Could not save preferences.')
@@ -423,6 +425,20 @@ export function PreferencesPage(): React.JSX.Element {
                   checked={prefs.allowBypassMode}
                   data-testid="allow-bypass"
                   onCheckedChange={(v) => void set({ allowBypassMode: v })}
+                />
+              </Row>
+            </Section>
+            <Section id="chat" title="Conversation">
+              <Row
+                label="Expand tool cards by default"
+                hint="Edit, Read, Bash and other tool calls show their full body. Off keeps them collapsed to one line; click a card to open it."
+                htmlFor="tool-cards-expanded"
+              >
+                <Toggle
+                  id="tool-cards-expanded"
+                  checked={prefs.toolCardsExpanded}
+                  data-testid="tool-cards-expanded"
+                  onCheckedChange={(v) => void set({ toolCardsExpanded: v })}
                 />
               </Row>
             </Section>

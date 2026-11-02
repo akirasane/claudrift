@@ -34,6 +34,8 @@ export interface AppPrefs {
   showCavemanBadge: boolean
   /** Start sessions with `--chrome` (Claude in Chrome). Needs the Chrome extension; applies to new sessions. */
   claudeInChrome: boolean
+  /** Tool cards (Edit, Read, Bash, ...) start expanded. Off: collapsed to their header line. */
+  toolCardsExpanded: boolean
 }
 
 export const DEFAULT_PREFS: AppPrefs = {
@@ -53,7 +55,8 @@ export const DEFAULT_PREFS: AppPrefs = {
   autoUpdate: true,
   showLimitsBar: true,
   showCavemanBadge: true,
-  claudeInChrome: false
+  claudeInChrome: false,
+  toolCardsExpanded: false
 }
 
 export type AppPrefsPatch = {
@@ -66,6 +69,7 @@ export type AppPrefsPatch = {
   showLimitsBar?: boolean
   showCavemanBadge?: boolean
   claudeInChrome?: boolean
+  toolCardsExpanded?: boolean
 }
 
 /** Renderer -> main (fire-and-forget): drives the pause/resume native notifications and the keep-awake lock. */
