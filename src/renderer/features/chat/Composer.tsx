@@ -12,6 +12,7 @@ import { ModeMenu } from './mode/ModeMenu'
 import { dataUrl, readImages } from './attachments'
 import { applyMention, mentionAt } from './mentions'
 import { routeSlash } from './slash-router'
+import { toggleRemoteWithToast } from '@/features/limits/RemoteToggle'
 import { AddDirButton, ExtraDirsChips } from './ExtraDirsBar'
 import { selectExtraDirs, useExtraDirs } from '@/stores/extra-dirs-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -184,6 +185,9 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
         break
       case 'palette':
         usePaletteStore.getState().setOpen(true)
+        break
+      case 'remote':
+        void toggleRemoteWithToast()
         break
     }
   }

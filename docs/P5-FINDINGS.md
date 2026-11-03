@@ -64,3 +64,9 @@ What `/context` showed for a fresh session (CLI 2.1.312): about 15k tokens in to
 - **Caveman ultra without touching its files:** the plugin's `getDefaultMode` reads `CAVEMAN_DEFAULT_MODE` first. The app sets it in the session's `env` (spread over `process.env`, since `env` replaces the child's environment). The `ultra` value maps to `ultracave`.
 - **A/B, same prompt, fresh session:** saver off: Sonnet, 725 output tokens, 1,498 chars, $0.0732. Saver on: Haiku, 441 output tokens, 779 chars, $0.0727. A fresh session's cost is mostly the prompt-cache write, so the saving shows over longer chats (shorter replies, no thinking tokens, compaction), not on a single short turn.
 - Applies to new sessions only: environment, model and effort are fixed when the CLI starts.
+
+## Remote Control
+
+- Headless `/remote-control` and `/rc` through the SDK answer "isn't available in this environment", so the app runs the CLI subcommand `claude remote-control [--name <n>] [--permission-mode <m>]` as a managed child process in the active project cwd (`src/main/services/remote-control.ts`). The status bar button `status-remote` and the slash commands `/rc` and `/remote-control` toggle it.
+- Probe (`claude.exe remote-control --name ccwrap-probe`, stdin closed): in a folder that was never trusted the CLI prints one line, `Error: Workspace not trusted. Please run \`claude\` in <dir> first to review and accept the workspace trust dialog.`, and exits. The app shows that as the error state. The ready output (URL line) could not be captured without trusting the folder, so "on" is detected by the first `https://` URL in stdout/stderr; unverified against a live run.
+- Limitation: sessions started this way are separate sessions that claude.ai/code and the phone app drive on this PC; they are not the app's open chat.

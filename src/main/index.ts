@@ -15,6 +15,7 @@ import { GitService } from './services/git-service'
 import { FileSearchService } from './services/file-search'
 import { LimitsService } from './services/limits-service'
 import { UsageProbe } from './services/usage-probe'
+import { RemoteControlService } from './services/remote-control'
 import { saverOptions } from '../shared/saver'
 import { HotkeyService } from './services/hotkey-service'
 import { NotificationService } from './services/notification-service'
@@ -85,6 +86,9 @@ const usageProbe = new UsageProbe({
   ingest: (l) => limits.ingest(l),
   enabled: () => prefs.get().showLimitsBar,
   log: (m) => console.warn('[ccwrap]', m)
+})
+const remote = new RemoteControlService({
+  broadcast: (state) => getWindow()?.webContents.send(IpcChannels.remoteState, state)
 })
 const caveman = new CavemanService({
   configDir: claudeConfigDir(),
@@ -214,7 +218,8 @@ if (!app.requestSingleInstanceLock()) {
       autoResume: { report: (r) => autoResume.report(r) },
       update: updates,
       limits,
-      caveman
+      caveman,
+      remote: { getState: () => remote.getState(), start: (a) => remote.start(a), stop: () => remote.stop() }
     })
     updates.start()
     caveman.start()
@@ -244,6 +249,7 @@ app.on('will-quit', () => {
   updates.dispose()
   caveman.dispose()
   usageProbe.dispose()
+  remote.dispose()
   autoResume.dispose()
   notifications.dispose()
 })

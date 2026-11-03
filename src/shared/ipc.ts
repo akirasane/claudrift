@@ -24,6 +24,7 @@ import type { AppInfo, HistorySessionInfo, ProjectInfo, SessionEvent } from './e
 import type { GitDiff, GitLog, GitStatus } from './git'
 import type { CavemanState, LimitsState } from './limits'
 import type { PluginsBrowseResult, PluginsListResult, PluginsMutationResult } from './plugins'
+import type { RemoteState } from './remote'
 import type { UsageQuery, UsageSummary } from './usage'
 import { PermissionModeSchema } from './permission-mode'
 import type { PermissionMode } from './permission-mode'
@@ -320,6 +321,15 @@ export function looksAbsolute(p: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(p) || /^[\\/]/.test(p)
 }
 
+export const RemoteStartSchema = z.object({
+  cwd: z
+    .string()
+    .min(1)
+    .refine((p) => !p.includes(' ') && looksAbsolute(p), { message: 'cwd must be an absolute path' }),
+  name: z.string().min(1).max(100).optional(),
+  permissionMode: PermissionModeSchema.optional()
+})
+
 export const UsageQuerySchema = z.object({
   days: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(365)]),
   cwd: z
@@ -449,6 +459,12 @@ export interface CcwrapApi {
   limits: {
     getState(): Promise<LimitsState>
     onState(cb: (s: LimitsState) => void): () => void
+  }
+  remote: {
+    getState(): Promise<RemoteState>
+    start(a: { cwd: string; name?: string; permissionMode?: PermissionMode }): Promise<RemoteState>
+    stop(): Promise<RemoteState>
+    onState(cb: (s: RemoteState) => void): () => void
   }
   caveman: {
     getState(): Promise<CavemanState>

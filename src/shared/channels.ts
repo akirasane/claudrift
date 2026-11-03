@@ -74,5 +74,11 @@ export const IpcChannels = {
   limitsGet: 'limits:get',
   /** main -> renderer */
   cavemanState: 'caveman:state',
-  cavemanGet: 'caveman:get'
+  cavemanGet: 'caveman:get',
+  // ---- remote control ----
+  /** main -> renderer */
+  remoteState: 'remote:state',
+  remoteGet: 'remote:get',
+  remoteStart: 'remote:start',
+  remoteStop: 'remote:stop'
 } as const

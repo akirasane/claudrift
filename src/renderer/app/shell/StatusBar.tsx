@@ -13,6 +13,7 @@ import { ShieldAlert } from 'lucide-react'
 import { isBypass, modeLabel } from '@/features/chat/mode/modes'
 import { CavemanBadge, LimitsCluster } from '@/features/limits/UsageCluster'
 import { SaverToggle } from '@/features/limits/SaverToggle'
+import { RemoteToggle } from '@/features/limits/RemoteToggle'
 import { CostMeter } from './CostMeter'
 
 const STATE: Record<string, { label: string; dot: string }> = {
@@ -137,6 +138,7 @@ export function StatusBar(): React.JSX.Element {
       {sep}
       <CostMeter value={conv?.lastResult?.costUsd} />
       <span className="ml-auto flex min-w-0 items-center gap-2">
+        <RemoteToggle />
         <SaverToggle />
         <CavemanBadge />
         <LimitsCluster />

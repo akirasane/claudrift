@@ -16,6 +16,12 @@ describe('routeSlash', () => {
     expect(routeSlash('/plugin')).toEqual({ kind: 'view', view: 'plugins' })
   })
 
+  it('routes /rc and /remote-control to the remote toggle', () => {
+    expect(routeSlash('/rc')).toEqual({ kind: 'remote' })
+    expect(routeSlash('/remote-control')).toEqual({ kind: 'remote' })
+    expect(routeSlash('/rc extra')).toBeNull()
+  })
+
   it('is case-insensitive on the command name', () => {
     expect(routeSlash('/Clear')).toEqual({ kind: 'clear' })
   })

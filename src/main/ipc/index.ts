@@ -16,6 +16,8 @@ import { PluginService } from '../services/plugin-service'
 import { registerPrefsIpc } from './prefs'
 import type { PrefsIpcDeps } from './prefs'
 import { registerPtyIpc } from './pty'
+import { registerRemoteIpc } from './remote-control'
+import type { RemoteIpcDeps } from './remote-control'
 import { registerSessionIpc } from './session'
 import { registerCavemanIpc, registerLimitsIpc } from './statusbar'
 import type { CavemanIpcDeps, LimitsIpcDeps } from './statusbar'
@@ -46,6 +48,7 @@ export interface IpcDeps {
   /** Status bar sources (optional so older callers keep working). */
   limits?: LimitsIpcDeps
   caveman?: CavemanIpcDeps
+  remote?: RemoteIpcDeps
   /** WP14 sink for renderer auto-resume reports (optional so older callers keep working). */
   autoResume?: Parameters<typeof registerAutoResumeIpc>[0]
 }
@@ -64,6 +67,7 @@ export function registerIpc(deps: IpcDeps): Disposer {
     deps.update ? registerUpdateIpc(deps.update) : () => {},
     deps.limits ? registerLimitsIpc(deps.limits) : () => {},
     deps.caveman ? registerCavemanIpc(deps.caveman) : () => {},
+    deps.remote ? registerRemoteIpc(deps.remote) : () => {},
     registerConfigIpc({ send: deps.send, registry: deps.registry }),
     registerItemsIpc({ send: deps.send, registry: deps.registry }),
     registerMcpIpc(),

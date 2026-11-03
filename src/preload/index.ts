@@ -3,6 +3,7 @@ import { IpcChannels } from '../shared/channels'
 import type { FsChangedPayload, PtyDataPayload, PtyExitPayload } from '../shared/config'
 import type { AppPrefs, UpdateState } from '../shared/app'
 import type { CavemanState, LimitsState } from '../shared/limits'
+import type { RemoteState } from '../shared/remote'
 import type { CcwrapApi, SessionEventPayload } from '../shared/ipc'
 
 function subscribe<T>(channel: string, cb: (p: T) => void): () => void {
@@ -62,6 +63,12 @@ const api: CcwrapApi = {
   limits: {
     getState: () => ipcRenderer.invoke(IpcChannels.limitsGet),
     onState: (cb) => subscribe<LimitsState>(IpcChannels.limitsState, cb)
+  },
+  remote: {
+    getState: () => ipcRenderer.invoke(IpcChannels.remoteGet),
+    start: (a) => ipcRenderer.invoke(IpcChannels.remoteStart, a),
+    stop: () => ipcRenderer.invoke(IpcChannels.remoteStop),
+    onState: (cb) => subscribe<RemoteState>(IpcChannels.remoteState, cb)
   },
   caveman: {
     getState: () => ipcRenderer.invoke(IpcChannels.cavemanGet),

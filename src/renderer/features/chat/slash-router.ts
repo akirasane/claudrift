@@ -11,6 +11,7 @@ export type SlashAction =
   | { kind: 'view'; view: AppView }
   | { kind: 'model'; model: string }
   | { kind: 'palette' }
+  | { kind: 'remote' }
 
 /** Bare commands that open an app page instead of being sent to the model. */
 const VIEW_COMMANDS: Record<string, AppView> = {
@@ -40,6 +41,7 @@ export function routeSlash(text: string, userCommands?: ReadonlySet<string>): Sl
   if (args) return null // `/config key=value`, `/mcp ...` etc. belong to the CLI
   if (name === 'clear') return { kind: 'clear' }
   if (name === 'help') return { kind: 'palette' }
+  if (name === 'rc' || name === 'remote-control') return { kind: 'remote' }
   const view = VIEW_COMMANDS[name]
   return view ? { kind: 'view', view } : null
 }
