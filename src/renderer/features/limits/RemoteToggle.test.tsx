@@ -46,7 +46,10 @@ describe('RemoteToggle', () => {
     const b = await screen.findByTestId('status-remote')
     expect(b).toHaveTextContent('OFF')
     fireEvent.click(b)
-    await waitFor(() => expect(start).toHaveBeenCalledWith(expect.objectContaining({ cwd: 'C:\proj' })))
+    const input = (await screen.findByTestId('remote-name')) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'my phone' } })
+    fireEvent.click(screen.getByTestId('remote-name-start'))
+    await waitFor(() => expect(start).toHaveBeenCalledWith(expect.objectContaining({ cwd: 'C:\proj', name: 'my phone' })))
     act(() => push({ status: 'on', url: 'https://claude.ai/code/x', log: [] }))
     await waitFor(() => expect(screen.getByTestId('status-remote')).toHaveTextContent('ON'))
     expect(screen.getByTestId('remote-copy')).toBeInTheDocument()
