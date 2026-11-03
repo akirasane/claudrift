@@ -20,7 +20,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   window.localStorage.clear()
   useExtraDirs.setState({ byCwd: {} })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = { dialog: { pickDirectory: pick }, session: { start, send: vi.fn() } }
+  ;(window as unknown as { claudrift: unknown }).claudrift = { dialog: { pickDirectory: pick }, session: { start, send: vi.fn() } }
   useChatStore.setState({ convs: {}, localToConv: {}, drafts: {}, draftImages: {}, modes: {}, draftModels: {} })
   useChatStore.getState().createConv({ convId: 'c1', cwd: 'C:\\proj' })
 })

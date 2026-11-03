@@ -70,7 +70,7 @@ describe('PtyService (fake pty)', () => {
     const env = spawned[0]!.opts.env
     expect(env.ELECTRON_RUN_AS_NODE).toBeUndefined()
     expect(env.ELECTRON_RENDERER_URL).toBeUndefined()
-    expect(env.TERM_PROGRAM).toBe('ccwraper')
+    expect(env.TERM_PROGRAM).toBe('Claudrift')
     expect(env.COLORTERM).toBe('truecolor')
     expect(env.PATH).toBe('x')
   })
@@ -205,11 +205,11 @@ describe.runIf(process.platform === 'win32')('PtyService (real node-pty)', () =>
       // Test-only: pass extra args through a wrapping spawn is not allowed by the service,
       // so drive the real shell by writing the command to it.
       const { ptyId } = svc.open('cmd', cwd, 80, 24, 1)
-      svc.write(ptyId, 'echo ccwrap-pty-ok\r')
+      svc.write(ptyId, 'echo claudrift-pty-ok\r')
       svc.write(ptyId, 'exit 0\r')
     })
     const exit = await done
     expect(exit.exitCode).toBe(0)
-    expect(out).toContain('ccwrap-pty-ok')
+    expect(out).toContain('claudrift-pty-ok')
   }, 20000)
 })

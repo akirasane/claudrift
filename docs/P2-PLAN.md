@@ -38,7 +38,7 @@ Why:
 - What we lose: Monaco's JSON-schema IntelliSense. Semantic problems come from zod schemas instead (section 2.5). **SPEC deviation** (SPEC section 1 says Monaco). The `CodeEditor` component interface stays editor-agnostic, so P3 can swap or add Monaco if an inspector needs it.
 
 ### D4. ConfigService: own atomic write, conflict detection, backups outside the project, chokidar 6
-- **Atomic write (no new dependency):** write `<file>.ccwrap-<rand>.tmp` in the same directory, `fsync`, `rename` over the target. On Windows, retry `EPERM` / `EBUSY` / `EACCES` up to 5 times with 20-200 ms backoff (antivirus, or the CLI holding the file). `mkdir -p` the parent (`<proj>/.claude/`). Delete the temp file on failure. `write-file-atomic` 8 adds nothing we need.
+- **Atomic write (no new dependency):** write `<file>.claudrift-<rand>.tmp` in the same directory, `fsync`, `rename` over the target. On Windows, retry `EPERM` / `EBUSY` / `EACCES` up to 5 times with 20-200 ms backoff (antivirus, or the CLI holding the file). `mkdir -p` the parent (`<proj>/.claude/`). Delete the temp file on failure. `write-file-atomic` 8 adds nothing we need.
 - **Optimistic concurrency:** every read returns `hash` (sha256 of the bytes, `null` when the file is missing). Every write carries `baseHash`. Main re-reads the file right before writing. If the hash differs, it returns `{ok:false, code:'conflict', current}` and writes nothing. This is how we stay safe against the running CLI (for example "Always allow" writes `settings.local.json` while the editor is open). The UI offers "Reload" or "Overwrite" (overwrite = write again with `current.hash`).
 - **Preserve unknown keys:** the raw editor writes the user's text verbatim after `JSON.parse` succeeds and the root is an object. The form never re-serializes from a schema: it applies path patches (`set` / `delete`) onto the parsed current file and serializes with the file's detected indent (default 2) and EOL, plus a trailing newline. Key order is kept, and untouched keys keep their values exactly. If the file on disk does not parse (comments, broken JSON), the form is read-only and only the raw editor is offered. We never overwrite a file we couldn't parse unless the user saves valid JSON from the raw editor.
 - **Backups: one before the first write per file per app run, stored under `app.getPath('userData')/backups/`** as `<first 12 hex of sha1(path)>-<basename>.<timestamp>.bak`, keeping the last 5 per file. **SPEC deviation (location):** a `.claude/settings.json.bak` next to project files would get committed to the user's repo. Main logs the backup path; the editors show "Backup saved" in the save toast.
@@ -109,8 +109,8 @@ Decision:
   - Git Bash (`C:\Program Files\Git\bin\bash.exe`, or derived from `where.exe git`; args `--login -i`)
   - WSL (`%SystemRoot%\System32\wsl.exe` exists; not spawned for detection)
 
-  All five exist on this machine. Default: pwsh, else powershell. The user's choice is kept in renderer `localStorage` (`ccwrap.terminal.defaultShell`).
-- **Security:** `pty:open` accepts only a detected `shellId` (never a path or args from the renderer), and `cwd` must be an existing directory. Cap 8 ptys. Env = `process.env` minus `ELECTRON_RUN_AS_NODE`, `ELECTRON_RENDERER_URL`, `ELECTRON_NO_ATTACH_CONSOLE`, plus `TERM_PROGRAM=ccwraper` and `COLORTERM=truecolor`. Env is never logged.
+  All five exist on this machine. Default: pwsh, else powershell. The user's choice is kept in renderer `localStorage` (`claudrift.terminal.defaultShell`).
+- **Security:** `pty:open` accepts only a detected `shellId` (never a path or args from the renderer), and `cwd` must be an existing directory. Cap 8 ptys. Env = `process.env` minus `ELECTRON_RUN_AS_NODE`, `ELECTRON_RENDERER_URL`, `ELECTRON_NO_ATTACH_CONSOLE`, plus `TERM_PROGRAM=Claudrift` and `COLORTERM=truecolor`. Env is never logged.
 - **Lifecycle:** each pty is owned by the `webContents` that opened it. Kill on:
   - `pty:close`
   - `webContents` `destroyed` / `render-process-gone`
@@ -125,7 +125,7 @@ Decision:
   - Deferred: split panes, clickable file paths (there is no inspector yet), ligatures (D2).
 
 ### D8. No sqlite in P2
-Everything P2 persists is small UI preference: terminal height and open state, default shell, cached model list, last settings tab. That goes in renderer `localStorage`, like `ccwrap.lastCwd` in P1. `node:sqlite` (P1 D3) waits for a feature that needs queries (pins / tags, P4).
+Everything P2 persists is small UI preference: terminal height and open state, default shell, cached model list, last settings tab. That goes in renderer `localStorage`, like `claudrift.lastCwd` in P1. `node:sqlite` (P1 D3) waits for a feature that needs queries (pins / tags, P4).
 
 ### D9. P1 follow-ups folded into P2
 | # | Item | Resolution | WP |
@@ -143,7 +143,7 @@ Everything P2 persists is small UI preference: terminal height and open state, d
 - **The lockfile has one writer (WP0).** No other WP edits `package.json` / `package-lock.json` or runs `npm install`; a missing dependency is reported to the lead.
 - **Contracts freeze after WP0:** `src/shared/**`, `src/preload/**`, tsconfigs, `vitest.config.ts`, `tests/setup-*.ts`. Changes go through the lead. New channel names go in `src/shared/channels.ts` only (zod-free, bundled by the sandboxed preload).
 - **Never touch the real user config in tests.** WP0 adds `tests/setup-node.ts` as `setupFiles` for the node vitest project. It creates a temp dir per worker and points `CLAUDE_CONFIG_DIR`, `USERPROFILE` and `HOME` at it before any test module loads. All services get their paths by constructor injection (`ConfigPaths`), never from `os.homedir()` directly. Project dirs in tests are `mkdtemp` dirs, removed in `afterEach`. A guard test asserts that `claudeConfigDir()` is not under the real home during tests.
-- **CLI integration tests are opt-in** (`CCWRAP_CLI_IT=1`). They run the real `claude.exe` with `USERPROFILE` / `HOME` / `CLAUDE_CONFIG_DIR` set to a temp dir, and assert that redirection before the first spawn. The default `npm test` uses a fake CLI runner. MCP CLI calls cost no API money.
+- **CLI integration tests are opt-in** (`CLAUDRIFT_CLI_IT=1`). They run the real `claude.exe` with `USERPROFILE` / `HOME` / `CLAUDE_CONFIG_DIR` set to a temp dir, and assert that redirection before the first spawn. The default `npm test` uses a fake CLI runner. MCP CLI calls cost no API money.
 - **pty tests:** unit tests inject a fake `spawn`. One real-spawn test (`cmd.exe /c echo`) runs by default on win32 only (it's fast and deterministic, and the probe passed on Node 26); it is skipped on other platforms.
 - **Live app checks of mutations (WP11)** that write user-scope settings, MCP or memory run with a sandboxed config (`CLAUDE_CONFIG_DIR` + `USERPROFILE` pointing at a scratch dir). Against the user's real config: read-only views only, plus writes inside a scratch project (`D:\claude-tmp\p2-live`). Never add or remove servers in the real user or local scope.
 - **Live SDK runs cost money.** Only WP4 (one spike) and WP11 run them, with `settingSources: []` unless settings are under test.
@@ -233,7 +233,7 @@ export interface ModelOption { value: string; displayName: string; description?:
 ### 2.3 `src/shared/events.ts` (change)
 - `permission_request` adds `ruleLabels?: string[]` (all rules). `ruleLabel` stays as the first rule, for compatibility.
 
-### 2.4 `src/shared/ipc.ts` (zod schemas + `CcwrapApi`)
+### 2.4 `src/shared/ipc.ts` (zod schemas + `ClaudriftApi`)
 - `PermissionReplySchema.remember` becomes `z.enum(['once','session','always','user'])` (`always` = localSettings, `user` = userSettings).
 - Config:
   - `ConfigFileRefSchema`: discriminated union mirroring 2.2, with a `.refine` that `cwd` is present when scope is not `user`
@@ -253,7 +253,7 @@ export interface ModelOption { value: string; displayName: string; description?:
   - `PtyWriteSchema {ptyId, data: z.string().max(1_000_000)}`
   - `PtyResizeSchema {ptyId, cols, rows}`
   - `PtyCloseSchema {ptyId}`
-- `CcwrapApi` adds:
+- `ClaudriftApi` adds:
 ~~~ts
 config: {
   read(ref: ConfigFileRef): Promise<ConfigSnapshot>
@@ -324,7 +324,7 @@ session: { /* existing members */ supportedModels(localId: string): Promise<Mode
 - `AppShell`:
   - renders the active view in the main column (lazy pages), with the terminal slot under it
   - binds Ctrl+Backquote to toggle the terminal
-  - calls `config.watchProject(cwd)` on cwd change, guarded with `window.ccwrap.config?.` because the existing AppShell tests mock a partial API
+  - calls `config.watchProject(cwd)` on cwd change, guarded with `window.claudrift.config?.` because the existing AppShell tests mock a partial API
 - `LeftRail` adds nav rows Sessions / MCP / Memory, with Settings pinned at the bottom (README layout).
 
 ---
@@ -358,7 +358,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5 in parallel -> **W2** 
 
 **Do:**
 1. One install, exact versions. Runtime: `node-pty` 1.1.0, `chokidar` 6.0.0, `@xterm/xterm` 6.0.0, `@xterm/addon-webgl` 0.19.0, `@xterm/addon-fit` 0.11.0, `@xterm/addon-search` 0.16.0, `@xterm/addon-web-links` 0.12.0, `@xterm/addon-unicode11` 0.9.0, and the CodeMirror set from D3. No new dev deps. Check that the install log shows node-pty's "Checking prebuilds" line with no node-gyp, and that `npm_config_build_from_source` is unset.
-2. Contracts 2.1-2.5. Preload wiring: `send` for write/resize, `on` / `removeListener` for events. `api.d.ts` only changes through the `CcwrapApi` type.
+2. Contracts 2.1-2.5. Preload wiring: `send` for write/resize, `on` / `removeListener` for events. `api.d.ts` only changes through the `ClaudriftApi` type.
 3. `paths.ts` additions, pure and tested with Windows fixtures and both slash forms:
    - `claudeConfigDir(env?, home?)` and `claudeGlobalConfigPath(env?, home?)` (the D4 rule)
    - `managedSettingsPath(platform?)`
@@ -404,7 +404,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5 in parallel -> **W2** 
    - `add`, `remove`, `update` (with rollback) and `test` (parses `Status:`)
    - errors become a `McpMutationResult` carrying the CLI's message; no secret logging
 3. `ipc/mcp.ts` handlers. Validate `name` and `config` with the frozen schemas before spawning.
-4. Opt-in integration test (`CCWRAP_CLI_IT=1`): temp `USERPROFILE` / `HOME` / `CLAUDE_CONFIG_DIR` and a temp project; add (all 3 scopes), list, update, remove, all through Node `execFile`. Include a config whose args contain spaces, quotes and a Windows path with backslashes, because argument quoting is the main Windows risk. The test asserts the redirected env before the first spawn.
+4. Opt-in integration test (`CLAUDRIFT_CLI_IT=1`): temp `USERPROFILE` / `HOME` / `CLAUDE_CONFIG_DIR` and a temp project; add (all 3 scopes), list, update, remove, all through Node `execFile`. Include a config whose args contain spaces, quotes and a Windows path with backslashes, because argument quoting is the main Windows risk. The test asserts the redirected env before the first spawn.
 
 **Accept:**
 - unit tests on fixtures:
@@ -488,7 +488,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5 in parallel -> **W2** 
    - an ignored defaultMode gets a badge
    - managed and flag are read-only; env is masked
 
-**Accept:** component tests with a mocked `window.ccwrap`:
+**Accept:** component tests with a mocked `window.claudrift`:
 - a form edit calls `config.write` with text that keeps an unknown key
 - a conflict result shows the banner, and Overwrite resends with the new hash
 - an unparsable file makes the form read-only and offers raw
@@ -555,7 +555,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5 in parallel -> **W2** 
 
 **Do:**
 - D9 #2: the rule list, plus a scope split button (This project / All projects / This session); the toast names the destination.
-- D9 #3: the model menu chip in Composer; StatusBar shows the selected model; the list is cached in `localStorage` `ccwrap.models`.
+- D9 #3: the model menu chip in Composer; StatusBar shows the selected model; the list is cached in `localStorage` `claudrift.models`.
 - D9 #5: the tab-scroll fix plus a regression test.
 - D9 #6: the truncation notice.
 - A "Run in terminal" action on Bash tool cards that calls `requestRunInTerminal({cwd, command})`.

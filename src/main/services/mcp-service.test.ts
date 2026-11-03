@@ -14,7 +14,7 @@ let proj: string
 let cfgDir: string
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'ccwrap-mcp-'))
+  dir = mkdtempSync(join(tmpdir(), 'claudrift-mcp-'))
   proj = join(dir, 'proj')
   cfgDir = join(dir, 'cfg')
   mkdirSync(proj, { recursive: true })

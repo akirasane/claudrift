@@ -1,24 +1,24 @@
 // CDP smoke test of the built app: visits every view, opens the terminal, saves screenshots.
 // Run: npm run build && npm run smoke
 // Env (all optional):
-//   CCWRAP_SMOKE_SHOTS   screenshot dir            (default D:\claude-tmp\p4-shots)
-//   CCWRAP_SMOKE_CWD     project to select         (default D:\claude-tmp\p4-live)
-//   CCWRAP_SMOKE_PORT    debugging port            (default 9333)
-//   CCWRAP_SMOKE_DATA    --user-data-dir           (default D:\claude-tmp\p4-smoke-ud)
-//   CCWRAP_SMOKE_EXE     run a packaged exe (dist\win-unpacked\ccwraper.exe) instead of electron + the repo
+//   CLAUDRIFT_SMOKE_SHOTS   screenshot dir            (default D:\claude-tmp\p4-shots)
+//   CLAUDRIFT_SMOKE_CWD     project to select         (default D:\claude-tmp\p4-live)
+//   CLAUDRIFT_SMOKE_PORT    debugging port            (default 9333)
+//   CLAUDRIFT_SMOKE_DATA    --user-data-dir           (default D:\claude-tmp\p4-smoke-ud)
+//   CLAUDRIFT_SMOKE_EXE     run a packaged exe (dist\win-unpacked\Claudrift.exe) instead of electron + the repo
 //   CLAUDE_CONFIG_DIR    point the app at a sandboxed Claude config (recommended; do NOT redirect USERPROFILE/HOME)
-//   CCWRAP_SMOKE_LIVE=1  also run one cheap haiku subagent turn and check the live activity UI (opt-in: needs a
+//   CLAUDRIFT_SMOKE_LIVE=1  also run one cheap haiku subagent turn and check the live activity UI (opt-in: needs a
 //                        login, costs about $0.02, and the CLI loads the user's own hooks and plugins)
-// Without CCWRAP_SMOKE_LIVE the script never sends a chat message and never clicks save/add/remove/create,
+// Without CLAUDRIFT_SMOKE_LIVE the script never sends a chat message and never clicks save/add/remove/create,
 // so it is safe on a real config too.
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { Cdp, launchApp, sleep, waitFor } from './cdp-client'
 
-const shots = process.env['CCWRAP_SMOKE_SHOTS'] ?? 'D:\\claude-tmp\\p4-shots'
-const cwd = process.env['CCWRAP_SMOKE_CWD'] ?? 'D:\\claude-tmp\\p4-live'
-const port = Number(process.env['CCWRAP_SMOKE_PORT'] ?? 9333)
-const userData = process.env['CCWRAP_SMOKE_DATA'] ?? 'D:\\claude-tmp\\p4-smoke-ud'
+const shots = process.env['CLAUDRIFT_SMOKE_SHOTS'] ?? 'D:\\claude-tmp\\p4-shots'
+const cwd = process.env['CLAUDRIFT_SMOKE_CWD'] ?? 'D:\\claude-tmp\\p4-live'
+const port = Number(process.env['CLAUDRIFT_SMOKE_PORT'] ?? 9333)
+const userData = process.env['CLAUDRIFT_SMOKE_DATA'] ?? 'D:\\claude-tmp\\p4-smoke-ud'
 
 async function main(): Promise<void> {
   mkdirSync(shots, { recursive: true })
@@ -37,7 +37,7 @@ async function main(): Promise<void> {
   try {
     const cdp = await Cdp.connect(port)
     await waitFor(cdp, `document.getElementById('root')?.children.length > 0`, 20_000, 'root rendered')
-    await cdp.eval(`localStorage.setItem('ccwrap.lastCwd', ${JSON.stringify(cwd)})`)
+    await cdp.eval(`localStorage.setItem('claudrift.lastCwd', ${JSON.stringify(cwd)})`)
     await cdp.send('Page.reload')
     await sleep(1500)
     await waitFor(cdp, `document.querySelector('[data-testid=app-shell]')`, 20_000, 'app shell')
@@ -130,7 +130,7 @@ async function main(): Promise<void> {
     })
     await cdp.clickSel('nav button', 'Sessions')
 
-    if (process.env['CCWRAP_SMOKE_LIVE'] === '1') {
+    if (process.env['CLAUDRIFT_SMOKE_LIVE'] === '1') {
       await step('LIVE: haiku subagent turn shows working row, subagent card and exact tokens', async () => {
         await cdp.clickSel('button', 'New session')
         await sleep(600)

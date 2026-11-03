@@ -19,7 +19,7 @@ export function modelLabel(models: ModelOption[], id: string | undefined): strin
   return id
 }
 
-const CACHE_KEY = 'ccwrap.models'
+const CACHE_KEY = 'claudrift.models'
 const ALIASES = ['default', 'opus', 'sonnet', 'fable', 'haiku']
 
 export const FALLBACK_MODELS: ModelOption[] = [
@@ -53,7 +53,7 @@ export function useModels(localId: string | undefined): ModelOption[] {
   React.useEffect(() => {
     if (!localId) return
     let cancelled = false
-    const api = window.ccwrap?.session
+    const api = window.claudrift?.session
     if (!api?.supportedModels) return
     api
       .supportedModels(localId)

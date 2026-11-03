@@ -211,7 +211,7 @@ export class ConfigService {
       await this.prune(prefix)
       return dest
     } catch (err) {
-      console.warn('[ccwrap] config backup failed', err instanceof Error ? err.message : err)
+      console.warn('[claudrift] config backup failed', err instanceof Error ? err.message : err)
       return undefined
     }
   }

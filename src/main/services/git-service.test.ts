@@ -45,7 +45,7 @@ function g(cwd: string, ...args: string[]): string {
     windowsHide: true
   })
 }
-function tmp(prefix = 'ccwrap-git-'): string {
+function tmp(prefix = 'claudrift-git-'): string {
   const d = mkdtempSync(join(BASE, prefix))
   made.push(d)
   return d
@@ -249,7 +249,7 @@ describe.skipIf(!hasGit)('real git, temp repos', { timeout: 90_000 }, () => {
   })
 
   it('ahead / behind against a bare remote and detached head', async () => {
-    const base = tmp('ccwrap-git-remote-')
+    const base = tmp('claudrift-git-remote-')
     const bare = join(base, 'bare.git')
     g(base, 'init', '-q', '--bare', '-b', 'main', bare)
     const a = join(base, 'a')

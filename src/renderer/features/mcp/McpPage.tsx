@@ -65,7 +65,7 @@ export function McpPage({ cwd }: { cwd?: string }): React.JSX.Element {
 
   const list = useQuery({
     queryKey: configKeys.mcp(cwd),
-    queryFn: () => window.ccwrap.mcp.list({ ...(cwd ? { cwd } : {}) })
+    queryFn: () => window.claudrift.mcp.list({ ...(cwd ? { cwd } : {}) })
   })
   const refresh = (): Promise<void> => qc.invalidateQueries({ queryKey: ['mcp'] })
 
@@ -77,8 +77,8 @@ export function McpPage({ cwd }: { cwd?: string }): React.JSX.Element {
     const editing = dialog?.entry
     const base = { scope: v.scope, ...(cwd ? { cwd } : {}), name: v.name, config: v.config as never }
     const res = editing
-      ? await window.ccwrap.mcp.update({ ...base, ...(v.newName ? { newName: v.newName } : {}) })
-      : await window.ccwrap.mcp.add(base)
+      ? await window.claudrift.mcp.update({ ...base, ...(v.newName ? { newName: v.newName } : {}) })
+      : await window.claudrift.mcp.add(base)
     if (res.ok) {
       toast.success(editing ? 'Server updated' : 'Server added')
       await refresh()
@@ -90,7 +90,7 @@ export function McpPage({ cwd }: { cwd?: string }): React.JSX.Element {
   const runTest = async (s: McpServerEntry): Promise<void> => {
     setTests((t) => ({ ...t, [s.name]: { running: true } }))
     try {
-      const result = await window.ccwrap.mcp.test({ ...(cwd ? { cwd } : {}), name: s.name })
+      const result = await window.claudrift.mcp.test({ ...(cwd ? { cwd } : {}), name: s.name })
       setTests((t) => ({ ...t, [s.name]: { running: false, result } }))
     } catch (e) {
       const output = e instanceof Error ? e.message : String(e)
@@ -103,7 +103,7 @@ export function McpPage({ cwd }: { cwd?: string }): React.JSX.Element {
 
   const remove = useMutation({
     mutationFn: async (s: McpServerEntry) =>
-      window.ccwrap.mcp.remove({ scope: s.scope, ...(cwd ? { cwd } : {}), name: s.name }),
+      window.claudrift.mcp.remove({ scope: s.scope, ...(cwd ? { cwd } : {}), name: s.name }),
     onSuccess: async (res, s) => {
       if (res.ok) {
         toast.success(`Removed ${s.name}`)
@@ -121,13 +121,13 @@ export function McpPage({ cwd }: { cwd?: string }): React.JSX.Element {
     if (!cwd) return
     const ref = { kind: 'settings', scope: 'local', cwd } as const
     try {
-      const snap = await window.ccwrap.config.read(ref)
+      const snap = await window.claudrift.config.read(ref)
       const patched = patchApproval(snap.text, s.name, decision)
       if ('error' in patched) {
         toast.error(patched.error)
         return
       }
-      const res = await window.ccwrap.config.write({ ref, text: patched.text, baseHash: snap.hash })
+      const res = await window.claudrift.config.write({ ref, text: patched.text, baseHash: snap.hash })
       if (!res.ok) {
         toast.error(res.code === 'conflict' ? 'settings.local.json changed on disk; try again' : res.message)
         return

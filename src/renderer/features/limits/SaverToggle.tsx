@@ -10,14 +10,14 @@ export function SaverToggle(): React.JSX.Element {
   const qc = useQueryClient()
   const q = useQuery<AppPrefs>({
     queryKey: ['prefs'],
-    queryFn: () => window.ccwrap.prefs.get(),
+    queryFn: () => window.claudrift.prefs.get(),
     retry: false,
     staleTime: Infinity
   })
   const on = q.data?.ultraSaver ?? DEFAULT_PREFS.ultraSaver
   const toggle = async (): Promise<void> => {
     try {
-      const res = await window.ccwrap.prefs.set({ ultraSaver: !on })
+      const res = await window.claudrift.prefs.set({ ultraSaver: !on })
       qc.setQueryData(['prefs'], res.prefs)
       toast(res.prefs.ultraSaver ? 'Ultra saver on' : 'Ultra saver off', { description: 'Applies to new chats, not ones already running.' })
     } catch (err) {

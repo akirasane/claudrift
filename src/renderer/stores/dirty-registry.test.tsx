@@ -57,7 +57,7 @@ describe('dirty registry + workspace store', () => {
 
   it('openSession waits for the decision', async () => {
     const load = vi.fn(async () => [])
-    ;(window as unknown as { ccwrap: unknown }).ccwrap = { history: { load } }
+    ;(window as unknown as { claudrift: unknown }).claudrift = { history: { load } }
     setDirty('settings', true)
     const p = useWorkspaceStore.getState().openSession({ sessionId: 's1', cwd: 'C:\\fixture\\alpha', title: 't' } as never)
     expect(load).not.toHaveBeenCalled()
@@ -70,7 +70,7 @@ describe('dirty registry + workspace store', () => {
 
 describe('AppShell discard dialog', () => {
   it('asks before leaving a dirty view; Keep editing stays, Discard navigates', async () => {
-    ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+    ;(window as unknown as { claudrift: unknown }).claudrift = {
       session: { onEvent: vi.fn(() => () => {}), supportedModels: vi.fn(async () => []) },
       dialog: { pickDirectory: vi.fn(async () => null) },
       history: { listProjects: vi.fn(async () => []), list: vi.fn(async () => []), load: vi.fn(async () => []) },

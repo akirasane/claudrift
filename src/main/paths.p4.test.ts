@@ -13,8 +13,8 @@ import {
   windowStatePath
 } from './paths'
 
-const WIN_ASAR = 'C:\\Users\\u\\AppData\\Local\\Programs\\ccwraper\\resources\\app.asar\\node_modules\\@anthropic-ai\\claude-agent-sdk-win32-x64\\claude.exe'
-const WIN_UNPACKED = 'C:\\Users\\u\\AppData\\Local\\Programs\\ccwraper\\resources\\app.asar.unpacked\\node_modules\\@anthropic-ai\\claude-agent-sdk-win32-x64\\claude.exe'
+const WIN_ASAR = 'C:\\Users\\u\\AppData\\Local\\Programs\\Claudrift\\resources\\app.asar\\node_modules\\@anthropic-ai\\claude-agent-sdk-win32-x64\\claude.exe'
+const WIN_UNPACKED = 'C:\\Users\\u\\AppData\\Local\\Programs\\Claudrift\\resources\\app.asar.unpacked\\node_modules\\@anthropic-ai\\claude-agent-sdk-win32-x64\\claude.exe'
 
 describe('asar helpers', () => {
   it('detects paths inside app.asar (either separator)', () => {
@@ -58,18 +58,18 @@ describe('pickClaudeExecutable', () => {
   })
 })
 
-describe('CCWRAP_CLAUDE_SOURCE=bundled', () => {
-  const prev = { src: process.env['CCWRAP_CLAUDE_SOURCE'], p: process.env['CCWRAP_CLAUDE_PATH'] }
+describe('CLAUDRIFT_CLAUDE_SOURCE=bundled', () => {
+  const prev = { src: process.env['CLAUDRIFT_CLAUDE_SOURCE'], p: process.env['CLAUDRIFT_CLAUDE_PATH'] }
   afterEach(() => {
-    if (prev.src === undefined) delete process.env['CCWRAP_CLAUDE_SOURCE']
-    else process.env['CCWRAP_CLAUDE_SOURCE'] = prev.src
-    if (prev.p === undefined) delete process.env['CCWRAP_CLAUDE_PATH']
-    else process.env['CCWRAP_CLAUDE_PATH'] = prev.p
+    if (prev.src === undefined) delete process.env['CLAUDRIFT_CLAUDE_SOURCE']
+    else process.env['CLAUDRIFT_CLAUDE_SOURCE'] = prev.src
+    if (prev.p === undefined) delete process.env['CLAUDRIFT_CLAUDE_PATH']
+    else process.env['CLAUDRIFT_CLAUDE_PATH'] = prev.p
     resetClaudeBinaryCache()
   })
-  it('forces the bundled binary even when CCWRAP_CLAUDE_PATH is set', () => {
-    process.env['CCWRAP_CLAUDE_SOURCE'] = 'bundled'
-    process.env['CCWRAP_CLAUDE_PATH'] = process.execPath
+  it('forces the bundled binary even when CLAUDRIFT_CLAUDE_PATH is set', () => {
+    process.env['CLAUDRIFT_CLAUDE_SOURCE'] = 'bundled'
+    process.env['CLAUDRIFT_CLAUDE_PATH'] = process.execPath
     resetClaudeBinaryCache()
     const exe = resolveClaudeExecutable()
     expect(exe).toBeDefined()

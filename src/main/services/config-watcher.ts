@@ -265,7 +265,7 @@ export class ConfigWatcher {
     if (this.watcher) return
     const w = await (this.opts.factory ?? defaultWatcherFactory)({ ignored: (p) => this.isIgnored(p) })
     for (const ev of ['add', 'change', 'unlink', 'addDir', 'unlinkDir'] as const) w.on(ev, (p: string) => this.onEvent(p))
-    w.on('error', (err: unknown) => console.warn('[ccwrap] config watcher error', err instanceof Error ? err.message : err))
+    w.on('error', (err: unknown) => console.warn('[claudrift] config watcher error', err instanceof Error ? err.message : err))
     this.watcher = w
   }
 
@@ -292,7 +292,7 @@ export class ConfigWatcher {
       key,
       setTimeout(() => {
         this.timers.delete(key)
-        void this.settle(key, target).catch((err) => console.warn('[ccwrap] watcher settle failed', err instanceof Error ? err.message : err))
+        void this.settle(key, target).catch((err) => console.warn('[claudrift] watcher settle failed', err instanceof Error ? err.message : err))
       }, ms)
     )
   }
@@ -316,7 +316,7 @@ export class ConfigWatcher {
           const paths = [...(this.pendingItems.get(slot) ?? [])]
           this.pendingItems.delete(slot)
           void this.settleItem(r, rel[0]!, paths).catch((err) =>
-            console.warn('[ccwrap] watcher settle failed', err instanceof Error ? err.message : err)
+            console.warn('[claudrift] watcher settle failed', err instanceof Error ? err.message : err)
           )
         }, this.opts.debounceMs ?? 150)
       )

@@ -40,7 +40,7 @@ The aggregation happens in `sdk-adapter.ts`, so `input_json_delta` text never cr
 - **Context (live ctx %)** = the latest **main-thread** call's `prompt + out`. `contextExact` follows that call.
 - **Session totals** come from the latest `result.modelUsage` (sum over models), which is exact and includes subagents. They are added to the `result` event as `sessionUsage`. `costUsd` stays `total_cost_usd`, unchanged.
 - **Emission:** `usage_live` goes out on every `message_start` and `message_delta`, and at most every 250 ms while deltas arrive (trailing flush), so about 4/s. The renderer coalesces it per animation frame like the text deltas.
-- **Context window before the first result:** the renderer caches `contextWindow` per model id in `localStorage` (`ccwrap.ctxWindow`), written from every `result`. With no cached value, ctx shows `--` until the first result. `getContextUsage()` is not called: it is a control request in the middle of a turn, and we want no extra SDK traffic.
+- **Context window before the first result:** the renderer caches `contextWindow` per model id in `localStorage` (`claudrift.ctxWindow`), written from every `result`. With no cached value, ctx shows `--` until the first result. `getContextUsage()` is not called: it is a control request in the middle of a turn, and we want no extra SDK traffic.
 - **UI marking:** estimates are prefixed with `~`, use a dotted underline, and carry the tooltip "Estimated from streamed text (about 4 characters per token). The exact count arrives when the message completes." Exact values have no marker. Timers are local wall-clock and carry no marker.
 
 ### D3. Working time
@@ -103,7 +103,7 @@ Decisions:
 - **Plugins:** the init message carries `plugins: {name, path, version?}[]` (verified). `SessionManager` feeds a main-side `PluginRegistry` (a union over all inits in this app run). The listing scans `<plugin.path>/skills/*/SKILL.md`, `<plugin.path>/commands/**/*.md` and `<plugin.path>/agents/*.md`.
   - With no session yet, `pluginsKnown:false` and the UI says "Plugin items appear after a session has started in this app."
   - `installed_plugins.json` / plugin cache layouts are **not** parsed: they are undocumented formats (SPEC 9 risk).
-- **Delete = move to trash:** the item moves to `<userData>/trash/<ISO stamp>-<kind>-<scope>-<name with / as __>/`, with a `ccwrap-trash.json` (original path, kind, scope, time) next to the payload.
+- **Delete = move to trash:** the item moves to `<userData>/trash/<ISO stamp>-<kind>-<scope>-<name with / as __>/`, with a `claudrift-trash.json` (original path, kind, scope, time) next to the payload.
   - `fs.rename` first, with the atomic-write retry backoff for `EPERM` / `EBUSY` / `EACCES`.
   - On `EXDEV` (userData on C:, project on D:), fall back to `fs.cp` recursive, then verify (same file list, sizes and sha256), and only then remove the source. The source is never removed unless the copy verified.
   - No auto-purge. The toast shows the trash path. **No `rm` of user content anywhere.**
@@ -158,7 +158,7 @@ Shared zod `looseObject` schemas in `config-schemas.ts`. Issues map to editor di
   - unknown type: a read-only JSON view that can be edited in the per-entry JSON box
 - **Matcher:** optional free text. It gets a warning if it does not compile as a JS RegExp (it is not `*` and not a `|` list of words). Per-event hints: tool events (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`) take tool names or a regex; `SessionStart` takes `startup|resume|clear|compact`; `PreCompact` / `PostCompact` take `manual|auto`; `SubagentStart` / `SubagentStop` take an agent type. Other events show "matcher usually unused".
 - **Safety:**
-  - A permanent banner: "Hooks run automatically with your user account's permissions whenever the event fires, in every Claude Code session that loads this file (the CLI too). ccwraper never runs hooks." There is no Test or Run button, and no "Run in terminal" on hook commands.
+  - A permanent banner: "Hooks run automatically with your user account's permissions whenever the event fires, in every Claude Code session that loads this file (the CLI too). Claudrift never runs hooks." There is no Test or Run button, and no "Run in terminal" on hook commands.
   - Saving an added or changed `command` / `http` / `mcp_tool` entry opens a confirm dialog that lists the exact new or changed commands and URLs, with Save as the non-default button.
   - For **Project** scope the dialog also says the file is usually committed and the hooks will run for everyone who opens the repo, and it needs a checkbox.
   - The effective `disableAllHooks` is shown as a banner. Managed hooks are listed read-only.
@@ -211,11 +211,11 @@ These are constants in `src/shared/item-precedence.ts`, best knowledge of curren
 - **The only new dependency is `yaml` 2.9.1** (exact pin, runtime). No other installs.
 - **Never touch the real user config.** Tests use the P2 `tests/setup-node.ts` isolation (temp `CLAUDE_CONFIG_DIR` / `USERPROFILE` / `HOME`), `mkdtemp` project dirs and a temp `userData` / trash dir injected by constructor. A guard test asserts the trash dir is under the temp root. Fixtures are synthetic (`C:\fixture\proj`).
 - **Live SDK runs cost money.** Only WP1 (one spike), WP8 (one dev-app check) and WP11 run them. The spike uses `settingSources: []` and cwd `D:\claude-tmp\p3-sub`. Budget: WP1 under $0.05, WP8 under $0.10, WP11 under $0.75.
-- **Hooks are never executed by ccwraper code or tests.** Hook fixtures use harmless placeholder commands (`echo fixture`), and no test spawns them.
+- **Hooks are never executed by Claudrift code or tests.** Hook fixtures use harmless placeholder commands (`echo fixture`), and no test spawns them.
 - **No `rm` / `unlink` / `rmdir` of user content.** The only removal is the verified EXDEV fallback in D5 and the temp-file cleanup in `atomic-write`.
 - **No hex in components** (the guard stays). Agent `color` swatches map names to token classes.
 - Zustand 5 + React 19: selectors must return stable references. Derived arrays (top-level items, children per tool, running tasks) are memoized per `items` / `tools` / `tasks` reference (a WeakMap cache in `selectors.ts`) or read with `useShallow`. A new array from a selector on every call loops `useSyncExternalStore`.
-- Every WP verifies with `npm run typecheck`, `npm test` and `npm run build`. UI WPs add Testing Library tests with a mocked `window.ccwrap`. The P0 electron install quirk still applies.
+- Every WP verifies with `npm run typecheck`, `npm test` and `npm run build`. UI WPs add Testing Library tests with a mocked `window.claudrift`. The P0 electron install quirk still applies.
 
 ---
 
@@ -305,7 +305,7 @@ export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'stopp
 ~~~
 `text_delta` / `thinking_delta` are unchanged. They are main-thread only from P3 on (D4).
 
-### 2.4 `src/shared/ipc.ts` (zod schemas + `CcwrapApi`)
+### 2.4 `src/shared/ipc.ts` (zod schemas + `ClaudriftApi`)
 - `ConfigFileRefSchema` gains the item variants:
   - `name` uses the ref-name rule (D5): one segment for skills and agents, 1-3 segments for commands, enforced by a `superRefine` on `kind`
   - `plugin` matches `^[A-Za-z0-9_.@-]{1,128}$`
@@ -316,7 +316,7 @@ export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'stopp
 - `ItemsRenameSchema {ref (non-plugin), newName: NewItemName, baseHash: string, text?}`
 - `ItemsDeleteSchema {ref (non-plugin), baseHash: string}`
 - `SessionStopTaskSchema {localId, taskId: z.string().min(1)}`
-- `CcwrapApi` adds:
+- `ClaudriftApi` adds:
 ~~~ts
 items: {
   list(args: ItemsListArgs): Promise<ConfigItemList>
@@ -496,7 +496,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5, WP6, WP7 in parallel 
    - an interrupt (`status: idle` without a result) closes the turn with the local elapsed
 2. Tasks: upsert on `task_started`; merge `task_progress` (with `progressAt = now`), `task_updated` and `task_ended`. `endTurn(interrupted)` turns running tasks into `stopped`, except tasks with `background` while the session is still running. `chat-store.interrupt` marks running tasks `stopping` optimistically.
 3. `tool_progress` -> `ToolCallView.progressMs` (max of the old and new values).
-4. `contextWindow` cache: on `result` with `contextWindow`, write `localStorage['ccwrap.ctxWindow']` (a model -> window map). This happens in chat-store, not in the pure reducer. `selectLiveContext` takes the fallback from it.
+4. `contextWindow` cache: on `result` with `contextWindow`, write `localStorage['claudrift.ctxWindow']` (a model -> window map). This happens in chat-store, not in the pure reducer. `selectLiveContext` takes the fallback from it.
 5. Selectors from 2.9, memoized. `selectTopLevelItems` hides the children of known Agent / Task tools at any depth.
 6. Chat-store: coalesce `usage_live`, `task_progress` and `tool_progress` per frame with the deltas (FIFO order kept; other events still flush immediately). `stopTask(convId, taskId)` action.
 
@@ -613,10 +613,10 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5, WP6, WP7 in parallel 
 4. Dialogs:
    - New: scope, name with live strict validation, template -> `items.create`
    - Rename: the new name -> `items.rename` with `text` = the frontmatter `name` patched when it equalled the old name
-   - Delete: confirm "Move <name> to the ccwraper trash? (<trash dir>)" -> `items.delete`; the toast shows the trash path
+   - Delete: confirm "Move <name> to the Claudrift trash? (<trash dir>)" -> `items.delete`; the toast shows the trash path
 5. A selection change while dirty goes through `useDirtyRegistry.guard`.
 
-**Accept:** tests with a mocked `window.ccwrap`:
+**Accept:** tests with a mocked `window.claudrift`:
 - the list groups and chips (a user skill shadowing a project skill with the same name; a command shadowed by a skill; a plugin item locked)
 - a Form edit of `description` sends `config.write` with the other frontmatter keys, comments and body intact
 - a conflict banner with Overwrite resends with the new hash
@@ -672,7 +672,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4, WP5, WP6, WP7 in parallel 
    - The model chip after the first turn shows the display name.
    - Editor: the search panel is themed; the JSON editors do not load the markdown chunk (the chunk list in DevTools or the build graph).
    - Terminal: the WP7 result is re-checked live (exit a Git Bash tab, count `conhost.exe` descendants).
-3. `scripts/cdp-smoke.ts` visits Skills / Commands tab / Agents / Hooks too. A `CCWRAP_SMOKE_LIVE=1` branch runs the subagent prompt (opt-in, costs money).
+3. `scripts/cdp-smoke.ts` visits Skills / Commands tab / Agents / Hooks too. A `CLAUDRIFT_SMOKE_LIVE=1` branch runs the subagent prompt (opt-in, costs money).
 4. typecheck, test and build are green. Record the chunk sizes (entry, editor base, markdown, items pages, hooks page) and the frame times during streaming (a CDP `Performance` sample: p95 frame time while a subagent streams, target under 20 ms).
 
 **Accept:** the checklist passes, or each failure is recorded with a decision. `docs/P3-FINDINGS.md` records:

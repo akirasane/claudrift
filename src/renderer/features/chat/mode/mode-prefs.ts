@@ -11,13 +11,13 @@ export const useModePrefs = create<ModePrefsState>((set) => ({ allowBypass: fals
 
 let started = false
 
-/** Reads the preference once and follows changes. Safe without window.ccwrap (stays off). */
+/** Reads the preference once and follows changes. Safe without window.claudrift (stays off). */
 export function useAllowBypass(): boolean {
   const v = useModePrefs((s) => s.allowBypass)
   React.useEffect(() => {
     if (started) return
     started = true
-    const api = window.ccwrap?.prefs
+    const api = window.claudrift?.prefs
     if (!api) {
       started = false
       return

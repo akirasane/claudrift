@@ -36,7 +36,7 @@ beforeEach(() => {
   usePaletteStore.setState({ open: false })
   itemsList.mockReset()
   itemsList.mockResolvedValue({ kind: 'skill', items: [], roots: [], pluginsKnown: true })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     items: { list: itemsList },
     history: { list: vi.fn().mockResolvedValue([]), listProjects: vi.fn().mockResolvedValue([]) },
     config: {}

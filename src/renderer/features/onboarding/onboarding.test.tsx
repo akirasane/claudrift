@@ -22,7 +22,7 @@ const info = {
 }
 
 function mount(auth: AuthStatus, cwd?: string) {
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     app: { info: vi.fn(async () => info), authStatus: vi.fn(async () => auth) }
   }
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -65,7 +65,7 @@ describe('FirstRunCard', () => {
 
   it('hides when every check passes', async () => {
     mount({ state: 'signed_in', method: 'subscription', checkedAt: 1 }, 'C:\\proj')
-    await waitFor(() => expect(window.ccwrap.app.authStatus).toHaveBeenCalled())
+    await waitFor(() => expect(window.claudrift.app.authStatus).toHaveBeenCalled())
     await waitFor(() => expect(screen.queryByTestId('first-run-card')).toBeNull())
   })
 
@@ -82,7 +82,7 @@ describe('FirstRunCard', () => {
     expect(window.localStorage.getItem(FIRST_RUN_DISMISSED_KEY)).toBe('1')
     unmount()
     mount(out)
-    await waitFor(() => expect(window.ccwrap.app.info).toHaveBeenCalled())
+    await waitFor(() => expect(window.claudrift.app.info).toHaveBeenCalled())
     expect(screen.queryByTestId('first-run-card')).toBeNull()
   })
 })
@@ -117,7 +117,7 @@ describe('FirstRunCard in the chat empty state', () => {
   it('shows inside an empty MessageList for a signed-out user and stays out without a QueryClient', async () => {
     const { MessageList } = await import('../chat/MessageList')
     useChatStore.getState().createConv({ convId: 'fr1', cwd: 'C:\proj' })
-    ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+    ;(window as unknown as { claudrift: unknown }).claudrift = {
       app: { info: vi.fn(async () => info), authStatus: vi.fn(async () => out) }
     }
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })

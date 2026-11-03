@@ -123,7 +123,7 @@ export class PrefsService {
       try {
         cb(snapshot)
       } catch (err) {
-        console.warn('[ccwrap] prefs listener failed', err instanceof Error ? err.message : err)
+        console.warn('[claudrift] prefs listener failed', err instanceof Error ? err.message : err)
       }
     }
     return snapshot

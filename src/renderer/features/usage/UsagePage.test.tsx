@@ -55,7 +55,7 @@ function setup(cwd?: string) {
 beforeEach(() => {
   summary.mockReset()
   summary.mockResolvedValue(fixture())
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = { usage: { summary } }
+  ;(window as unknown as { claudrift: unknown }).claudrift = { usage: { summary } }
   window.requestAnimationFrame = ((cb: FrameRequestCallback) => setTimeout(() => cb(0), 0) as unknown as number) as typeof window.requestAnimationFrame
 })
 

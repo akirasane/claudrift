@@ -9,14 +9,14 @@ function isUnder(child: string, parent: string): boolean {
 }
 
 describe('test isolation guard (tests/setup-node.ts)', () => {
-  const realHome = process.env['CCWRAP_TEST_REAL_HOME']
+  const realHome = process.env['CLAUDRIFT_TEST_REAL_HOME']
 
   it('recorded the real home before redirecting', () => {
     expect(realHome).toBeTruthy()
   })
 
   it('home env vars point at the temp sandbox, not the real home', () => {
-    const sandbox = process.env['CCWRAP_TEST_HOME']!
+    const sandbox = process.env['CLAUDRIFT_TEST_HOME']!
     expect(sandbox).not.toBe(realHome)
     expect(process.env['USERPROFILE']).toBe(sandbox)
     expect(process.env['HOME']).toBe(sandbox)
@@ -27,7 +27,7 @@ describe('test isolation guard (tests/setup-node.ts)', () => {
   it('claudeConfigDir() and the global config path are not under the real home', () => {
     expect(isUnder(claudeConfigDir(), realHome!)).toBe(false)
     expect(isUnder(claudeGlobalConfigPath(), realHome!)).toBe(false)
-    expect(claudeConfigDir()).toBe(join(process.env['CCWRAP_TEST_HOME']!, '.claude'))
+    expect(claudeConfigDir()).toBe(join(process.env['CLAUDRIFT_TEST_HOME']!, '.claude'))
   })
 
   it('even with CLAUDE_CONFIG_DIR unset, the home fallback stays in the sandbox', () => {

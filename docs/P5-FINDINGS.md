@@ -44,7 +44,7 @@ Known gap: after `/clear` the CLI may start a new session id; `meta.sessionId` i
 
 - The SDK's `additionalDirectories` is fixed at launch. The only runtime path (`addDirectories`) accepts strict subfolders of cwd or of an existing root, so it cannot add an arbitrary folder. The app therefore applies folders to sessions started after they are added, and says so in a toast when a session is already live.
 - Live check: with a file in a folder outside cwd, `Read` raised a permission prompt without the option and no prompt with it.
-- Folders are stored per project in `localStorage` (`ccwrap.extraDirs.v1`), max 10, validated as existing directories in main before the session starts. `@file` search includes them (results are absolute paths).
+- Folders are stored per project in `localStorage` (`claudrift.extraDirs.v1`), max 10, validated as existing directories in main before the session starts. `@file` search includes them (results are absolute paths).
 
 ## D. Plugins and marketplaces
 
@@ -68,5 +68,5 @@ What `/context` showed for a fresh session (CLI 2.1.312): about 15k tokens in to
 ## Remote Control
 
 - Headless `/remote-control` and `/rc` through the SDK answer "isn't available in this environment", so the app runs the CLI subcommand `claude remote-control [--name <n>] [--permission-mode <m>]` as a managed child process in the active project cwd (`src/main/services/remote-control.ts`). The status bar button `status-remote` and the slash commands `/rc` and `/remote-control` toggle it.
-- Probe (`claude.exe remote-control --name ccwrap-probe`, stdin closed): in a folder that was never trusted the CLI prints one line, `Error: Workspace not trusted. Please run \`claude\` in <dir> first to review and accept the workspace trust dialog.`, and exits. The app shows that as the error state. The ready output (URL line) could not be captured without trusting the folder, so "on" is detected by the first `https://` URL in stdout/stderr; unverified against a live run.
+- Probe (`claude.exe remote-control --name claudrift-probe`, stdin closed): in a folder that was never trusted the CLI prints one line, `Error: Workspace not trusted. Please run \`claude\` in <dir> first to review and accept the workspace trust dialog.`, and exits. The app shows that as the error state. The ready output (URL line) could not be captured without trusting the folder, so "on" is detected by the first `https://` URL in stdout/stderr; unverified against a live run.
 - Limitation: sessions started this way are separate sessions that claude.ai/code and the phone app drive on this PC; they are not the app's open chat.

@@ -39,7 +39,7 @@ function make(trashFs?: TrashFs) {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ccwrap-items-'))
+  root = await mkdtemp(join(tmpdir(), 'claudrift-items-'))
   home = join(root, 'home')
   proj = join(root, 'proj')
   pluginDir = join(root, 'plug', 'acme')

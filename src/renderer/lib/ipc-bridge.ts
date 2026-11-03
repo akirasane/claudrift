@@ -12,7 +12,7 @@ function startActiveSessionReport(): () => void {
     if (localId === last) return
     last = localId
     try {
-      window.ccwrap.app?.setActiveSession?.(localId)
+      window.claudrift.app?.setActiveSession?.(localId)
     } catch {
       /* fire-and-forget */
     }
@@ -33,12 +33,12 @@ function startActiveSessionReport(): () => void {
 /** Subscribe to main-process session events once and route them into the chat store. Idempotent. */
 export function initIpcBridge(): () => void {
   if (!unsubscribe) {
-    const off = window.ccwrap.session.onEvent(({ localId, event }) => {
+    const off = window.claudrift.session.onEvent(({ localId, event }) => {
       useChatStore.getState().applyEvent(localId, event)
     })
     const offReport = startActiveSessionReport()
     // A notification click: show the tab whose session raised it.
-    const offFocus = window.ccwrap.app?.onFocusSession?.(({ localId }) => {
+    const offFocus = window.claudrift.app?.onFocusSession?.(({ localId }) => {
       const convId = useChatStore.getState().localToConv[localId]
       if (convId) useWorkspaceStore.getState().activateTab(convId)
     })

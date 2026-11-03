@@ -16,7 +16,7 @@ export function combineDisposers(...ds: Disposer[]): Disposer {
       try {
         d()
       } catch (err) {
-        console.warn('[ccwrap] dispose failed', err instanceof Error ? err.message : err)
+        console.warn('[claudrift] dispose failed', err instanceof Error ? err.message : err)
       }
     }
   }

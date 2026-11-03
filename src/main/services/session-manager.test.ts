@@ -24,7 +24,7 @@ function fakeAdapter(): AdapterSession {
 
 describe('SessionManager live activity wiring', () => {
   it('stopTask reaches the adapter', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const adapter = fakeAdapter()
       const m = new SessionManager(() => {}, { startSession: vi.fn(async () => adapter) })
@@ -38,7 +38,7 @@ describe('SessionManager live activity wiring', () => {
   })
 
   it('feeds the plugin registry from init and still emits the event', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const registry = new PluginRegistry()
       const emitted: unknown[] = []
@@ -72,7 +72,7 @@ describe('SessionManager', () => {
   it('rejects a missing cwd with a friendly error and never starts the SDK', async () => {
     const startSession = vi.fn()
     const m = new SessionManager(() => {}, { startSession })
-    await expect(m.start({ cwd: join(tmpdir(), 'ccwrap-does-not-exist-xyz'), prompt: 'hi' })).rejects.toThrow(
+    await expect(m.start({ cwd: join(tmpdir(), 'claudrift-does-not-exist-xyz'), prompt: 'hi' })).rejects.toThrow(
       /Working directory not found: /
     )
     expect(startSession).not.toHaveBeenCalled()
@@ -80,7 +80,7 @@ describe('SessionManager', () => {
   })
 
   it('rejects a cwd that is a file', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     const file = join(dir, 'f.txt')
     writeFileSync(file, 'x')
     try {
@@ -92,7 +92,7 @@ describe('SessionManager', () => {
   })
 
   it('starts for an existing directory; permissionReply passes remember through', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const adapter = fakeAdapter()
       const m = new SessionManager(() => {}, { startSession: vi.fn(async () => adapter) })
@@ -107,7 +107,7 @@ describe('SessionManager', () => {
   })
 
   it('requests summarized thinking so thinking blocks carry text', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const startSession = vi.fn(async () => fakeAdapter())
       await new SessionManager(() => {}, { startSession }).start({ cwd: dir, prompt: 'hi' })
@@ -118,7 +118,7 @@ describe('SessionManager', () => {
   })
 
   it('passes chrome only when the preference is on', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const startSession = vi.fn(async () => fakeAdapter())
       await new SessionManager(() => {}, { startSession, chrome: () => true }).start({ cwd: dir, prompt: 'hi' })
@@ -131,7 +131,7 @@ describe('SessionManager', () => {
   })
 
   it('passes setModel / setPermissionMode through and caches supportedModels', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const adapter = fakeAdapter()
       const m = new SessionManager(() => {}, { startSession: vi.fn(async () => adapter) })
@@ -156,8 +156,8 @@ describe('SessionManager', () => {
 
 describe('SessionManager extra directories', () => {
   it('forwards additionalDirectories and rejects a missing folder before starting', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
-    const extra = mkdtempSync(join(tmpdir(), 'ccwrap-extra-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
+    const extra = mkdtempSync(join(tmpdir(), 'claudrift-extra-'))
     try {
       const startSession = vi.fn(async () => fakeAdapter())
       const m = new SessionManager(() => {}, { startSession })
@@ -176,7 +176,7 @@ describe('SessionManager token saver', () => {
   const saver = { env: { CAVEMAN_DEFAULT_MODE: 'ultra' }, model: 'haiku', effort: 'low' as const, disableThinking: true }
 
   it('passes the saver and its model to a new session, read at call time', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const startSession = vi.fn(async () => fakeAdapter())
       let current: typeof saver | undefined
@@ -193,7 +193,7 @@ describe('SessionManager token saver', () => {
   })
 
   it('an explicit model for the chat beats the saver model; "default" does not', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
       const startSession = vi.fn(async () => fakeAdapter())
       const m = new SessionManager(() => {}, { startSession, saver: () => saver })

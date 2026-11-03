@@ -83,7 +83,7 @@ export function EffectiveHooksView({ view }: { view: ResolvedSettingsView }): Re
 export function EffectiveHooks({ cwd }: { cwd?: string }): React.JSX.Element {
   const q = useQuery({
     queryKey: configKeys.settingsResolve(cwd),
-    queryFn: () => window.ccwrap.settings.resolve({ cwd })
+    queryFn: () => window.claudrift.settings.resolve({ cwd })
   })
   if (q.isLoading) {
     return (

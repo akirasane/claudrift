@@ -58,7 +58,7 @@ beforeEach(() => {
   useWorkspaceStore.setState({ cwd: undefined, extraCwds: [], activeConvId: undefined, activeTitle: undefined, activeBranch: undefined, loadingSession: false })
   window.localStorage.clear()
   api = makeApi()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 
 async function openPicker(user: ReturnType<typeof userEvent.setup>) {
@@ -84,7 +84,7 @@ describe('AppShell', () => {
     render(<AppShell />)
     const list = await openPicker(user)
     await user.click(await within(list).findByRole('option', { name: /alpha/ }))
-    expect(window.localStorage.getItem('ccwrap.lastCwd')).toBe('C:\\fixture\\alpha')
+    expect(window.localStorage.getItem('claudrift.lastCwd')).toBe('C:\\fixture\\alpha')
     expect(await screen.findByTestId('chat-view')).toBeInTheDocument()
     expect(await screen.findByText('Fix the parser')).toBeInTheDocument()
     expect(api.history.list).toHaveBeenCalledWith({ cwd: 'C:\\fixture\\alpha' })
@@ -97,7 +97,7 @@ describe('AppShell', () => {
   })
 
   it('resume: history.load -> seed -> ChatView with resumeSessionId', async () => {
-    window.localStorage.setItem('ccwrap.lastCwd', 'C:\\fixture\\alpha')
+    window.localStorage.setItem('claudrift.lastCwd', 'C:\\fixture\\alpha')
     useWorkspaceStore.setState({ cwd: 'C:\\fixture\\alpha' })
     const user = userEvent.setup()
     render(<AppShell />)

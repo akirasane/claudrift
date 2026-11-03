@@ -25,7 +25,7 @@ export function DesignPage(): React.JSX.Element {
     <div data-testid="design-page" className="h-full overflow-y-auto bg-bg-0 text-fg">
       <div className="mx-auto flex max-w-[1180px] gap-8 px-6 pb-24">
         <nav aria-label="Design sections" className="sticky top-0 hidden h-screen w-44 shrink-0 flex-col gap-0.5 py-8 lg:flex">
-          <div className="mb-3 text-xs font-medium uppercase tracking-[var(--tracking-caps)] text-fg-3">ccwraper</div>
+          <div className="mb-3 text-xs font-medium uppercase tracking-[var(--tracking-caps)] text-fg-3">Claudrift</div>
           {NAV.map(([id, label]) => (
             <button
               key={id}
@@ -41,7 +41,7 @@ export function DesignPage(): React.JSX.Element {
           <header className="pb-6 pt-10">
             <h1 className="m-0 text-2xl font-semibold tracking-[var(--tracking-tighter)]">Design system</h1>
             <p className="m-0 mt-2 max-w-[62ch] text-md text-fg-2">
-              Tokens and components for ccwraper, rendered live from the CSS variables and fixtures. Dark, Geist, one accent gradient.
+              Tokens and components for Claudrift, rendered live from the CSS variables and fixtures. Dark, Geist, one accent gradient.
             </p>
           </header>
           {ready && (

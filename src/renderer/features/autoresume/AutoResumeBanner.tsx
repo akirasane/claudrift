@@ -25,7 +25,7 @@ export function AutoResumeBanner({ convId }: { convId: string }): React.JSX.Elem
   let detail: string | undefined
   if (armed && fireAt !== undefined && reset !== undefined) {
     headline = `Paused until ${formatClock(reset, now)}`
-    detail = `Resumes automatically in ${formatCountdown(fireAt - now)}. Keep ccwraper open.`
+    detail = `Resumes automatically in ${formatCountdown(fireAt - now)}. Keep Claudrift open.`
   } else {
     headline = reset !== undefined ? `Usage limit reached. Resets ${formatClock(reset, now)}` : 'Usage limit reached'
     if (pause?.blocked === 'loop') detail = 'Auto-resume stopped: 3 resumes this hour already.'

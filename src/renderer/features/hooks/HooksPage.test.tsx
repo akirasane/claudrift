@@ -20,12 +20,12 @@ function snap(ref: ConfigFileRef, text: string, hash: string | null = 'h1'): Con
 let files: Record<string, ConfigSnapshot>
 let write: ReturnType<typeof vi.fn>
 let resolve: ReturnType<typeof vi.fn>
-let ccwrap: Record<string, unknown>
+let claudrift: Record<string, unknown>
 
 function installApi(): void {
   write = vi.fn(async (): Promise<ConfigWriteResult> => ({ ok: false, code: 'io', message: 'unset' }))
   resolve = vi.fn(async (): Promise<ResolvedSettingsView> => ({ effective: {}, provenance: {}, sources: [] }))
-  ccwrap = {
+  claudrift = {
     config: {
       read: vi.fn(async (ref: ConfigFileRef) => files[ref.scope] ?? snap(ref, '', null)),
       write,
@@ -37,7 +37,7 @@ function installApi(): void {
     pty: { open: vi.fn(), write: vi.fn() },
     session: { start: vi.fn(), send: vi.fn() }
   }
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = ccwrap
+  ;(window as unknown as { claudrift: unknown }).claudrift = claudrift
 }
 
 function mount(cwd?: string) {
@@ -67,7 +67,7 @@ async function addPreToolUse(command: string) {
 describe('HooksPage safety', () => {
   it('always shows the safety banner, in every view', async () => {
     mount('C:\\proj')
-    expect(await screen.findByTestId('hooks-safety-banner')).toHaveTextContent(/ccwraper never runs hooks/)
+    expect(await screen.findByTestId('hooks-safety-banner')).toHaveTextContent(/Claudrift never runs hooks/)
     await userEvent.click(screen.getByRole('button', { name: 'Effective' }))
     expect(screen.getByTestId('hooks-safety-banner')).toBeInTheDocument()
   })
@@ -86,7 +86,7 @@ describe('HooksPage safety', () => {
     }
     expect(screen.queryByText(/run in terminal/i)).toBeNull()
     for (const ns of ['pty', 'session']) {
-      for (const fn of Object.values(ccwrap[ns] as Record<string, ReturnType<typeof vi.fn>>)) expect(fn).not.toHaveBeenCalled()
+      for (const fn of Object.values(claudrift[ns] as Record<string, ReturnType<typeof vi.fn>>)) expect(fn).not.toHaveBeenCalled()
     }
   })
 })

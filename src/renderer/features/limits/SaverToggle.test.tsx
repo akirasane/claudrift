@@ -23,7 +23,7 @@ beforeEach(() => {
     prefs = { ...prefs, ...patch }
     return { prefs, hotkey: { ok: true } }
   })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = { prefs: { get: async () => prefs, set } }
+  ;(window as unknown as { claudrift: unknown }).claudrift = { prefs: { get: async () => prefs, set } }
 })
 
 function mount(): void {

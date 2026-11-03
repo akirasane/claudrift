@@ -85,7 +85,7 @@ export function buildActionCommands(qc: QueryClient, ctx: { activeConvId?: strin
       keywords: ['auth', 'login', 'account'],
       icon: KeyRound,
       run: () => {
-        void window.ccwrap?.app
+        void window.claudrift?.app
           ?.authStatus({ refresh: true })
           .then(() => qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).toLowerCase().includes('auth') }))
           .catch(() => {})

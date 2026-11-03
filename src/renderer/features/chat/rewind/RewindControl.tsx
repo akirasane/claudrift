@@ -49,7 +49,7 @@ export function RewindControl({ convId, messageId }: { convId: string; messageId
   const preview = async (): Promise<void> => {
     setPhase({ kind: 'previewing' })
     try {
-      const result = await window.ccwrap.session.rewind({ localId, messageId, dryRun: true })
+      const result = await window.claudrift.session.rewind({ localId, messageId, dryRun: true })
       setPhase(result.canRewind ? { kind: 'preview', result } : { kind: 'error', message: result.error ?? 'Nothing to rewind.' })
     } catch (e) {
       setPhase({ kind: 'error', message: e instanceof Error ? e.message : String(e) })
@@ -59,7 +59,7 @@ export function RewindControl({ convId, messageId }: { convId: string; messageId
   const restore = async (result: RewindResult): Promise<void> => {
     setPhase({ kind: 'restoring', result })
     try {
-      const res = await window.ccwrap.session.rewind({ localId, messageId, dryRun: false })
+      const res = await window.claudrift.session.rewind({ localId, messageId, dryRun: false })
       if (!res.canRewind) {
         setPhase({ kind: 'error', message: res.error ?? 'Rewind failed.' })
         return

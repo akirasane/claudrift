@@ -71,7 +71,7 @@ function MemoryEditor({ scope, cwd, onDirtyChange }: EditorProps): React.JSX.Ele
   const qc = useQueryClient()
   const query = useQuery<ConfigSnapshot>({
     queryKey: configKeys.file(ref),
-    queryFn: () => window.ccwrap.config.read(ref)
+    queryFn: () => window.claudrift.config.read(ref)
   })
 
   const [base, setBase] = useState<ConfigSnapshot | null>(null)
@@ -110,7 +110,7 @@ function MemoryEditor({ scope, cwd, onDirtyChange }: EditorProps): React.JSX.Ele
       setSaving(true)
       setError(null)
       try {
-        const res = await window.ccwrap.config.write({ ref, text, baseHash })
+        const res = await window.claudrift.config.write({ ref, text, baseHash })
         if (res.ok) {
           setBase(res.snapshot)
           setDraft(res.snapshot.text)

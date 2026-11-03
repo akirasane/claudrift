@@ -14,7 +14,7 @@ const exists = (p: string) => stat(p).then(() => true, () => false)
 const errno = (code: string) => Object.assign(new Error(code), { code })
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ccwrap-trash-'))
+  root = await mkdtemp(join(tmpdir(), 'claudrift-trash-'))
   src = join(root, 'proj', '.claude', 'skills', 'demo')
   trashRoot = trashDir(join(root, 'userData'))
   await mkdir(join(src, 'sub'), { recursive: true })
@@ -28,7 +28,7 @@ afterEach(async () => {
 describe('trash guard', () => {
   it('keeps the trash dir under the temp root', () => {
     expect(trashRoot.startsWith(root)).toBe(true)
-    expect(trashRoot.startsWith(process.env['CCWRAP_TEST_REAL_HOME'] ?? '\0')).toBe(false)
+    expect(trashRoot.startsWith(process.env['CLAUDRIFT_TEST_REAL_HOME'] ?? '\0')).toBe(false)
   })
 })
 

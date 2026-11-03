@@ -1,6 +1,6 @@
-// Recently run palette commands (P4 D7). Stored as a JSON string array under ccwrap.palette.recent.
+// Recently run palette commands (P4 D7). Stored as a JSON string array under claudrift.palette.recent.
 
-export const RECENT_KEY = 'ccwrap.palette.recent'
+export const RECENT_KEY = 'claudrift.palette.recent'
 export const RECENT_MAX = 8
 
 export function readRecent(): string[] {

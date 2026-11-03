@@ -1,23 +1,23 @@
-// Packaged-app smoke: launches dist\win-unpacked\ccwraper.exe (build it first with `npm run dist:dir`) and checks
+// Packaged-app smoke: launches dist\win-unpacked\Claudrift.exe (build it first with `npm run dist:dir`) and checks
 // what only differs when packaged: asar-unpacked node-pty/claude.exe, CSP from file://, single instance, no DevTools/reload.
 // Run: npx tsx scripts/pkg-smoke.ts
 // Env:
-//   CCWRAP_PKG_LIVE=1   instead of the checks, run ONE haiku "Reply with just the word hi" turn with the bundled claude.exe
+//   CLAUDRIFT_PKG_LIVE=1   instead of the checks, run ONE haiku "Reply with just the word hi" turn with the bundled claude.exe
 //                       against the REAL config (needs the login; about $0.01). Without it a sandbox CLAUDE_CONFIG_DIR is used
 //                       and no model call is ever made.
-//   CCWRAP_PKG_UD / CCWRAP_PKG_CFG / CCWRAP_PKG_CWD / CCWRAP_PKG_PORT   paths and port (defaults under D:\claude-tmp)
+//   CLAUDRIFT_PKG_UD / CLAUDRIFT_PKG_CFG / CLAUDRIFT_PKG_CWD / CLAUDRIFT_PKG_PORT   paths and port (defaults under D:\claude-tmp)
 // Never redirects USERPROFILE/HOME. Kills only the process tree it started (by PID). Never runs the installer.
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { Cdp, repoRoot, sleep, waitFor } from './cdp-client'
 
-const exe = join(repoRoot, 'dist', 'win-unpacked', 'ccwraper.exe')
-const userData = process.env['CCWRAP_PKG_UD'] ?? 'D:\\claude-tmp\\p4-pkg-ud'
-const cfgDir = process.env['CCWRAP_PKG_CFG'] ?? 'D:\\claude-tmp\\p4-pkg-cfg'
-const cwd = process.env['CCWRAP_PKG_CWD'] ?? 'D:\\claude-tmp\\p4-live'
-const port = Number(process.env['CCWRAP_PKG_PORT'] ?? 9555)
-const live = process.env['CCWRAP_PKG_LIVE'] === '1'
+const exe = join(repoRoot, 'dist', 'win-unpacked', 'Claudrift.exe')
+const userData = process.env['CLAUDRIFT_PKG_UD'] ?? 'D:\\claude-tmp\\p4-pkg-ud'
+const cfgDir = process.env['CLAUDRIFT_PKG_CFG'] ?? 'D:\\claude-tmp\\p4-pkg-cfg'
+const cwd = process.env['CLAUDRIFT_PKG_CWD'] ?? 'D:\\claude-tmp\\p4-live'
+const port = Number(process.env['CLAUDRIFT_PKG_PORT'] ?? 9555)
+const live = process.env['CLAUDRIFT_PKG_LIVE'] === '1'
 const shots = 'D:\\claude-tmp\\p4-pkg-shots'
 
 interface Proc {
@@ -58,7 +58,7 @@ async function main(): Promise<void> {
   mkdirSync(userData, { recursive: true })
   mkdirSync(cwd, { recursive: true })
   mkdirSync(shots, { recursive: true })
-  const env: NodeJS.ProcessEnv = { ...process.env, CCWRAP_CLAUDE_SOURCE: 'bundled' }
+  const env: NodeJS.ProcessEnv = { ...process.env, CLAUDRIFT_CLAUDE_SOURCE: 'bundled' }
   delete env['ELECTRON_RUN_AS_NODE']
   if (!live) {
     mkdirSync(cfgDir, { recursive: true })
@@ -84,7 +84,7 @@ async function main(): Promise<void> {
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
       source: `window.__csp = []; document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));`
     })
-    await cdp.eval(`localStorage.setItem('ccwrap.lastCwd', ${JSON.stringify(cwd)})`)
+    await cdp.eval(`localStorage.setItem('claudrift.lastCwd', ${JSON.stringify(cwd)})`)
     await cdp.send('Page.reload')
     await sleep(1500)
     await waitFor(cdp, `document.querySelector('[data-testid=app-shell]')`, 30_000, 'app shell')
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
     })
 
     await step('app.info: packaged, bundled, userData', async () => {
-      const i = await cdp.eval<Record<string, unknown>>(`window.ccwrap.app.info()`)
+      const i = await cdp.eval<Record<string, unknown>>(`window.claudrift.app.info()`)
       if (i['packaged'] !== true) throw new Error('packaged != true: ' + JSON.stringify(i))
       if (i['claudeSource'] !== 'bundled') throw new Error('claudeSource: ' + String(i['claudeSource']))
       if (String(i['userDataDir']).toLowerCase() !== userData.toLowerCase()) throw new Error('userDataDir: ' + String(i['userDataDir']))
@@ -119,22 +119,22 @@ async function main(): Promise<void> {
 
     if (!live) {
       await step('terminal: pwsh and Git Bash open, echo, exit; OpenConsole from app.asar.unpacked; no leftovers', async () => {
-        const shells = await cdp.eval<Array<{ id: string; label: string }>>(`window.ccwrap.pty.listShells()`)
+        const shells = await cdp.eval<Array<{ id: string; label: string }>>(`window.claudrift.pty.listShells()`)
         const ids = shells.map((s) => s.id)
         if (!ids.includes('pwsh') || !ids.includes('gitbash')) throw new Error('shells: ' + JSON.stringify(shells))
         const result = await cdp.eval<Record<string, { out: boolean; exited: boolean }>>(`(async () => {
           const res = {}
           const bufs = {}, ptyOf = {}
-          const off1 = window.ccwrap.pty.onData((p) => { bufs[p.ptyId] = (bufs[p.ptyId] || '') + p.data })
+          const off1 = window.claudrift.pty.onData((p) => { bufs[p.ptyId] = (bufs[p.ptyId] || '') + p.data })
           const exited = {}
-          const off2 = window.ccwrap.pty.onExit((p) => { exited[p.ptyId] = true })
+          const off2 = window.claudrift.pty.onExit((p) => { exited[p.ptyId] = true })
           const wait = async (f, ms) => { const e = Date.now() + ms; while (Date.now() < e) { if (f()) return true; await new Promise((r) => setTimeout(r, 100)) } return false }
           for (const shellId of ['pwsh', 'gitbash']) {
-            const o = await window.ccwrap.pty.open({ shellId, cwd: ${JSON.stringify(cwd)}, cols: 100, rows: 30 })
+            const o = await window.claudrift.pty.open({ shellId, cwd: ${JSON.stringify(cwd)}, cols: 100, rows: 30 })
             const id = o.ptyId ?? o.id ?? o
             ptyOf[shellId] = id
             await new Promise((r) => setTimeout(r, 1500))
-            window.ccwrap.pty.write(id, 'echo pkg-' + 'ok-' + shellId + '\\r')
+            window.claudrift.pty.write(id, 'echo pkg-' + 'ok-' + shellId + '\\r')
             const gotOut = await wait(() => (bufs[id] || '').includes('pkg-ok-' + shellId), 10000)
             res[shellId] = { out: gotOut, exited: false }
             if (shellId === 'pwsh') window.__procProbe = true
@@ -156,7 +156,7 @@ async function main(): Promise<void> {
         const ocPath = oc[0]!.ExecutablePath
         // exit both shells and wait for pty:exit.
         const exited = await cdp.eval<boolean>(`(async () => {
-          for (const id of Object.values(window.__ptys)) window.ccwrap.pty.write(id, 'exit\\r')
+          for (const id of Object.values(window.__ptys)) window.claudrift.pty.write(id, 'exit\\r')
           const e = Date.now() + 10000
           while (Date.now() < e) { if (Object.values(window.__ptys).every((id) => window.__exited[id])) return true; await new Promise((r) => setTimeout(r, 150)) }
           return false
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
       })
 
       await step('second launch hands over and exits (single instance)', async () => {
-        const before = processes().filter((p) => /^ccwraper\.exe$/i.test(p.Name)).length
+        const before = processes().filter((p) => /^Claudrift\.exe$/i.test(p.Name)).length
         const second = spawn(exe, [`--user-data-dir=${userData}`], { env, stdio: 'ignore', cwd: 'D:\\claude-tmp' })
         const code = await new Promise<number | null>((res) => {
           const t = setTimeout(() => res(null), 15_000)
@@ -198,8 +198,8 @@ async function main(): Promise<void> {
         const targets = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as Array<{ type: string }>
         const pages = targets.filter((t) => t.type === 'page').length
         if (pages !== 1) throw new Error(`expected 1 page, got ${pages}`)
-        const after = processes().filter((p) => /^ccwraper\.exe$/i.test(p.Name)).length
-        return `second exit code ${code}; ccwraper.exe procs ${before} -> ${after}; pages ${pages}`
+        const after = processes().filter((p) => /^Claudrift\.exe$/i.test(p.Name)).length
+        return `second exit code ${code}; Claudrift.exe procs ${before} -> ${after}; pages ${pages}`
       })
     } else {
       await step('LIVE: one haiku turn spawns claude.exe from app.asar.unpacked', async () => {

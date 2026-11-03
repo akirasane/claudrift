@@ -24,7 +24,7 @@ const call = (ch: string, raw?: unknown): any => handlers.get(ch)!({}, raw)
 
 let dir: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'ccwrap-ipc-prefs-'))
+  dir = mkdtempSync(join(tmpdir(), 'claudrift-ipc-prefs-'))
 })
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
@@ -62,8 +62,8 @@ describe('app IPC', () => {
 describe('getAppInfo', () => {
   it('reports the unpacked bundled path (not empty) when the bundled binary is used', async () => {
     const paths = await import('../paths')
-    const prev = process.env['CCWRAP_CLAUDE_SOURCE']
-    process.env['CCWRAP_CLAUDE_SOURCE'] = 'bundled'
+    const prev = process.env['CLAUDRIFT_CLAUDE_SOURCE']
+    process.env['CLAUDRIFT_CLAUDE_SOURCE'] = 'bundled'
     paths.resetClaudeBinaryCache()
     try {
       const { getAppInfo } = await import('./app')
@@ -73,8 +73,8 @@ describe('getAppInfo', () => {
       expect(info.claudePath).toBeTruthy()
       expect(info.claudePath).not.toContain('app.asar' + require('node:path').sep + 'node_modules')
     } finally {
-      if (prev === undefined) delete process.env['CCWRAP_CLAUDE_SOURCE']
-      else process.env['CCWRAP_CLAUDE_SOURCE'] = prev
+      if (prev === undefined) delete process.env['CLAUDRIFT_CLAUDE_SOURCE']
+      else process.env['CLAUDRIFT_CLAUDE_SOURCE'] = prev
       paths.resetClaudeBinaryCache()
     }
   })

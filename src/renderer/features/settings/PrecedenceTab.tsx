@@ -194,7 +194,7 @@ export function PrecedenceView({ view }: { view: ResolvedSettingsView }): React.
 export function PrecedenceTab({ cwd }: { cwd?: string }): React.JSX.Element {
   const q = useQuery({
     queryKey: configKeys.settingsResolve(cwd),
-    queryFn: () => window.ccwrap.settings.resolve({ cwd })
+    queryFn: () => window.claudrift.settings.resolve({ cwd })
   })
   if (q.isLoading) {
     return (

@@ -132,7 +132,7 @@ beforeEach(() => {
   useTerminalStore.getState().reset()
   resetTerminalBus()
   api = makeApi()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
   // jsdom: elements have no layout; pretend visible so refit proceeds.
   Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get: () => 800 })
   Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: () => 300 })
@@ -281,7 +281,7 @@ describe('TerminalPanel', () => {
     fireEvent.pointerMove(handle, { clientY: 5000, pointerId: 1 })
     expect(panel.style.height).toBe('120px')
     fireEvent.pointerUp(handle, { pointerId: 1 })
-    expect(window.localStorage.getItem('ccwrap.terminal.height')).toBe('120')
+    expect(window.localStorage.getItem('claudrift.terminal.height')).toBe('120')
   })
 
   it('shows the failure and exit state when the shell cannot start', async () => {

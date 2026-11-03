@@ -27,10 +27,10 @@ function useBridgeState<T>(
 
 /** Latest subscription limits (5-hour, 7-day, ...) aggregated by main over every session. */
 export function useLimitsState(): LimitsState {
-  return useBridgeState(() => window.ccwrap?.limits, EMPTY_LIMITS)
+  return useBridgeState(() => window.claudrift?.limits, EMPTY_LIMITS)
 }
 
 /** The caveman plugin's mode + savings suffix (mode null = hidden). */
 export function useCavemanState(): CavemanState {
-  return useBridgeState(() => window.ccwrap?.caveman, EMPTY_CAVEMAN)
+  return useBridgeState(() => window.claudrift?.caveman, EMPTY_CAVEMAN)
 }

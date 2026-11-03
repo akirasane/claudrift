@@ -7,7 +7,7 @@ import { cn } from '@/lib/cn'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { typeSignInCommand } from './auth-hint'
 
-export const FIRST_RUN_DISMISSED_KEY = 'ccwrap.firstRun.dismissed'
+export const FIRST_RUN_DISMISSED_KEY = 'claudrift.firstRun.dismissed'
 
 function readDismissed(): boolean {
   try {
@@ -68,10 +68,10 @@ export interface FirstRunCardProps {
 /** Non-blocking setup checklist: binary, sign-in, project. Hidden when all pass or dismissed. */
 export function FirstRunCard({ cwd, onOpenFolder }: FirstRunCardProps): React.JSX.Element | null {
   const [dismissed, setDismissed] = React.useState(readDismissed)
-  const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.ccwrap.app.info(), retry: false })
+  const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.claudrift.app.info(), retry: false })
   const auth = useQuery<AuthStatus>({
     queryKey: ['app', 'authStatus'],
-    queryFn: () => window.ccwrap.app.authStatus(),
+    queryFn: () => window.claudrift.app.authStatus(),
     retry: false
   })
 

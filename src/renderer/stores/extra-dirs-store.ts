@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { MAX_EXTRA_DIRS } from '@shared/ipc'
 
-const KEY = 'ccwrap.extraDirs.v1'
+const KEY = 'claudrift.extraDirs.v1'
 
 /** Comparison key: slash style, trailing slash and case do not distinguish folders on Windows. */
 export const dirKey = (p: string): string => p.replaceAll('\\', '/').replace(/\/+$/, '').toLowerCase()

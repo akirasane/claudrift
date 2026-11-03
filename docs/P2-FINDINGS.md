@@ -101,5 +101,5 @@ P4:
 1. Packaging: asar unpack for node-pty, verify conout worker, code signing.
 2. Fix the exited-shell `conhost` leak (ConPTY host tracking or `useConptyDll`); WSL smoke on a machine with a distro.
 3. Reconcile project-MCP approval with `claude mcp list` (or document the difference in the UI).
-4. Add the model-picker and permission-mode checks to the smoke script behind an explicit `CCWRAP_SMOKE_LIVE=1` (they need a login and cost money).
+4. Add the model-picker and permission-mode checks to the smoke script behind an explicit `CLAUDRIFT_SMOKE_LIVE=1` (they need a login and cost money).
 5. Terminal: split panes, clickable paths once the inspector exists.

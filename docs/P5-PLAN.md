@@ -2,7 +2,7 @@
 
 Date: 2026-11-01. Inputs: `SPEC.md`, `docs/P4-PLAN.md` (format), `src/renderer/features/chat/*`, `src/main/services/sdk-adapter.ts`, `session-manager.ts`, `node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts`.
 
-Goal: close the high-value gaps between ccwraper and the Claude Code CLI found in the 2026-11-01 audit. Already shipped this session (uncommitted at time of writing): browser-testing MCP presets and the Claude in Chrome (`--chrome`) preference.
+Goal: close the high-value gaps between Claudrift and the Claude Code CLI found in the 2026-11-01 audit. Already shipped this session (uncommitted at time of writing): browser-testing MCP presets and the Claude in Chrome (`--chrome`) preference.
 
 Out of P5 (medium value, later): session export, bash mode (`!cmd`), output styles / status line editor, scheduled tasks and cron UI, sandbox settings UI, effort picker audit.
 

@@ -46,7 +46,7 @@ function seed(events: SessionEvent[], local = 'L1'): void {
 beforeEach(() => {
   vi.clearAllMocks()
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {} })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 afterEach(() => vi.useRealTimers())
 

@@ -3,7 +3,7 @@ import { cp, lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node
 import { basename, join, relative, resolve } from 'node:path'
 import { isTransientFsError, retryDelayMs } from './atomic-write'
 
-export const TRASH_MANIFEST = 'ccwrap-trash.json'
+export const TRASH_MANIFEST = 'claudrift-trash.json'
 
 export interface TrashStat {
   isDirectory(): boolean
@@ -136,7 +136,7 @@ export class Trash {
     try {
       await this.fs.writeFile(join(entry, TRASH_MANIFEST), JSON.stringify(manifest, null, 2))
     } catch (err) {
-      console.warn('[ccwrap] trash manifest failed', err instanceof Error ? err.message : err)
+      console.warn('[claudrift] trash manifest failed', err instanceof Error ? err.message : err)
     }
     return entry
   }

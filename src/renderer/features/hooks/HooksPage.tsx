@@ -42,14 +42,14 @@ function SafetyBanner(): React.JSX.Element {
       <ShieldAlert size={16} className="mt-0.5 shrink-0" aria-hidden />
       <p>
         Hooks run automatically with your user account&apos;s permissions whenever the event fires, in every Claude Code session that loads this file (the CLI
-        too). ccwraper never runs hooks.
+        too). Claudrift never runs hooks.
       </p>
     </div>
   )
 }
 
 function DisableAllBanner({ cwd }: { cwd?: string }): React.JSX.Element | null {
-  const q = useQuery({ queryKey: configKeys.settingsResolve(cwd), queryFn: () => window.ccwrap.settings.resolve({ cwd }) })
+  const q = useQuery({ queryKey: configKeys.settingsResolve(cwd), queryFn: () => window.claudrift.settings.resolve({ cwd }) })
   if (q.data?.effective.disableAllHooks !== true) return null
   const src = q.data.provenance.disableAllHooks?.source
   return (

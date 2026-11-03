@@ -30,7 +30,7 @@ export function installQuitGuard(win: BrowserWindow, deps: QuitGuardDeps): Dispo
       buttons: ['Quit', 'Cancel'],
       defaultId: 1,
       cancelId: 1,
-      title: 'ccwraper',
+      title: 'Claudrift',
       message,
       noLink: true
     })

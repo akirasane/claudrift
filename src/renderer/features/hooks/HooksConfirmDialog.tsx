@@ -40,7 +40,7 @@ export function HooksConfirmDialog({
         <DialogHeader>
           <DialogTitle>Save hooks that run code?</DialogTitle>
           <DialogDescription>
-            These hooks run automatically with your user account&apos;s permissions whenever their event fires. ccwraper never runs them.
+            These hooks run automatically with your user account&apos;s permissions whenever their event fires. Claudrift never runs them.
           </DialogDescription>
         </DialogHeader>
         <ul className="flex max-h-56 flex-col gap-1.5 overflow-y-auto" aria-label="Added or changed hooks" data-testid="hooks-confirm-list">

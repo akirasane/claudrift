@@ -2,8 +2,8 @@ import { create } from 'zustand'
 import type { ShellId } from '@shared/config'
 import { clampPanelHeight, PANEL_DEFAULT_HEIGHT } from './theme'
 
-export const HEIGHT_KEY = 'ccwrap.terminal.height'
-export const DEFAULT_SHELL_KEY = 'ccwrap.terminal.defaultShell'
+export const HEIGHT_KEY = 'claudrift.terminal.height'
+export const DEFAULT_SHELL_KEY = 'claudrift.terminal.defaultShell'
 
 export interface TerminalTab {
   id: string

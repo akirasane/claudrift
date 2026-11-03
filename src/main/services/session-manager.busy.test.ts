@@ -23,7 +23,7 @@ function fakeAdapter(): AdapterSession {
 
 let dir: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'ccwrap-busy-'))
+  dir = mkdtempSync(join(tmpdir(), 'claudrift-busy-'))
 })
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true })

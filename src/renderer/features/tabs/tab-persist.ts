@@ -3,7 +3,7 @@ import { useChatStore } from '@/stores/chat-store'
 import { useWorkspaceStore, type TabRef } from '@/stores/workspace-store'
 
 /** localStorage key for the open tabs (P4 D2). */
-export const TABS_KEY = 'ccwrap.tabs.v1'
+export const TABS_KEY = 'claudrift.tabs.v1'
 const DEBOUNCE_MS = 300
 
 export interface PersistedTab {

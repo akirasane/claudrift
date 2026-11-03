@@ -49,7 +49,7 @@ let events: FsChangedPayload[]
 const paths = (): ReturnType<typeof createConfigPaths> => createConfigPaths({ CLAUDE_CONFIG_DIR: join(home, '.claude') }, home)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ccwrap-watch-'))
+  root = await mkdtemp(join(tmpdir(), 'claudrift-watch-'))
   home = join(root, 'home')
   proj = join(root, 'proj')
   await mkdir(join(home, '.claude'), { recursive: true })

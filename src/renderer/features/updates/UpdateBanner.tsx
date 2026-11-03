@@ -5,7 +5,7 @@ import { selectIsRunning } from '@/features/chat/model/selectors'
 import { useChatStore } from '@/stores/chat-store'
 import { useUpdateState } from './use-update-state'
 
-const DISMISS_KEY = 'ccwrap.update.dismissed'
+const DISMISS_KEY = 'claudrift.update.dismissed'
 
 function readDismissed(): string | null {
   try {
@@ -39,7 +39,7 @@ export function UpdateBanner(): React.JSX.Element | null {
   }
   const install = (): void => {
     setInstalling(true)
-    void window.ccwrap.update.install().catch(() => setInstalling(false))
+    void window.claudrift.update.install().catch(() => setInstalling(false))
   }
 
   const text =

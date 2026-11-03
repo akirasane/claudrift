@@ -17,7 +17,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = { session: { rewind } }
+  ;(window as unknown as { claudrift: unknown }).claudrift = { session: { rewind } }
   useChatStore.setState({ convs: {}, localToConv: {}, drafts: {}, draftImages: {} })
   useChatStore.getState().createConv({ convId: 'c1', cwd: 'C:\\proj', localId: 'L1' })
 })

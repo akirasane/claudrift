@@ -24,7 +24,7 @@ const ERROR_TITLE: Record<GitErrorCode, string> = {
 const ERROR_HINT: Partial<Record<GitErrorCode, string>> = {
   not_repo: 'Open a project that is inside a git repository to see its changes.',
   git_missing: 'Install Git for Windows, or add git to PATH, then refresh.',
-  unsafe_repo: 'ccwraper never edits git config. Mark the folder safe yourself in a terminal, then refresh.',
+  unsafe_repo: 'Claudrift never edits git config. Mark the folder safe yourself in a terminal, then refresh.',
   timeout: 'The repository may be very large or busy. Try Refresh.'
 }
 

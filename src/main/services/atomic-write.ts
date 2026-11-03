@@ -57,7 +57,7 @@ export async function writeFileAtomic(path: string, data: string | Uint8Array, o
   const retries = opts.retries ?? 5
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const dir = dirname(path)
-  const tmp = join(dir, `${basename(path)}.ccwrap-${randomBytes(6).toString('hex')}.tmp`)
+  const tmp = join(dir, `${basename(path)}.claudrift-${randomBytes(6).toString('hex')}.tmp`)
   await fs.mkdir(dir)
   try {
     await fs.writeSynced(tmp, data)

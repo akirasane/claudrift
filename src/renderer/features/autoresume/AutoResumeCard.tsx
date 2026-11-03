@@ -5,7 +5,7 @@ import { Textarea, Toggle } from '@/components/ui'
 
 /**
  * Preferences card for "Auto-resume after usage limit". Self-contained: reads and saves through
- * window.ccwrap.prefs. The Preferences page only mounts it (no props).
+ * window.claudrift.prefs. The Preferences page only mounts it (no props).
  */
 export function AutoResumeCard(): React.JSX.Element {
   const [prefs, setPrefs] = useState<AutoResumePrefs>({ enabled: false, prompt: DEFAULT_AUTO_RESUME_PROMPT })
@@ -14,7 +14,7 @@ export function AutoResumeCard(): React.JSX.Element {
 
   useEffect(() => {
     let alive = true
-    const api = window.ccwrap?.prefs
+    const api = window.claudrift?.prefs
     if (!api) return
     void api
       .get()
@@ -36,7 +36,7 @@ export function AutoResumeCard(): React.JSX.Element {
   const save = async (patch: Partial<AutoResumePrefs>): Promise<void> => {
     setError(undefined)
     try {
-      const r = await window.ccwrap.prefs.set({ autoResume: patch })
+      const r = await window.claudrift.prefs.set({ autoResume: patch })
       setPrefs(r.prefs.autoResume)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -61,7 +61,7 @@ export function AutoResumeCard(): React.JSX.Element {
           </h3>
           <p className="mt-1 text-sm text-fg-3">
             When your plan limit (for example the 5-hour limit) stops a session, that tab waits and sends the message
-            below once the limit resets. It only works while ccwraper is running; it never approves permission
+            below once the limit resets. It only works while Claudrift is running; it never approves permission
             requests.
           </p>
         </div>

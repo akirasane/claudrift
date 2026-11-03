@@ -63,7 +63,7 @@ export function NewItemDialog({
     setBusy(true)
     setError(undefined)
     try {
-      const res = await window.ccwrap.items.create({ kind, scope, cwd: scope === 'project' ? cwd : undefined, name, text: spec.template(name) })
+      const res = await window.claudrift.items.create({ kind, scope, cwd: scope === 'project' ? cwd : undefined, name, text: spec.template(name) })
       if (res.ok) {
         refresh()
         toast.success(`${spec.label} created`)
@@ -174,7 +174,7 @@ export function RenameItemDialog({
     setError(undefined)
     try {
       const patched = renamedText(text, item.name, name)
-      const res = await window.ccwrap.items.rename({ ref: item.ref, newName: name, baseHash, ...(patched !== undefined ? { text: patched } : {}) })
+      const res = await window.claudrift.items.rename({ ref: item.ref, newName: name, baseHash, ...(patched !== undefined ? { text: patched } : {}) })
       if (res.ok) {
         refresh()
         toast.success('Renamed', { description: res.backupPath ? `Backup saved: ${res.backupPath}` : undefined })
@@ -255,7 +255,7 @@ export function DeleteItemDialog({
     setBusy(true)
     setError(undefined)
     try {
-      const res = await window.ccwrap.items.delete({ ref: item.ref, baseHash })
+      const res = await window.claudrift.items.delete({ ref: item.ref, baseHash })
       if (res.ok) {
         refresh()
         toast.success(`${item.name} moved to the trash`, { description: res.trashPath })
@@ -275,7 +275,7 @@ export function DeleteItemDialog({
         <DialogHeader>
           <DialogTitle>Delete {item.name}?</DialogTitle>
           <DialogDescription>
-            Move {item.name} to the ccwraper trash?{trashDir ? ` (${trashDir})` : ''} It can be restored from there.
+            Move {item.name} to the Claudrift trash?{trashDir ? ` (${trashDir})` : ''} It can be restored from there.
           </DialogDescription>
         </DialogHeader>
         {error && (

@@ -51,7 +51,7 @@ beforeEach(() => {
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {}, draftModels: {}, drafts: {}, draftImages: {} })
   useWorkspaceStore.setState({ view: 'chat' })
   usePaletteStore.setState({ open: false })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 
 describe('app-handled slash commands in the composer', () => {

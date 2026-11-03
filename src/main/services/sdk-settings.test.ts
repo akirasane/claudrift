@@ -42,8 +42,8 @@ describe('resolveSettingsView with the real SDK (sandboxed CLAUDE_CONFIG_DIR + t
     const { mkdir, mkdtemp, rm, writeFile } = await import('node:fs/promises')
     const { tmpdir } = await import('node:os')
     const cfg = process.env['CLAUDE_CONFIG_DIR']!
-    expect(cfg.startsWith(process.env['CCWRAP_TEST_HOME']!)).toBe(true) // sandbox guard
-    const proj = await mkdtemp(join(tmpdir(), 'ccwrap-resolve-'))
+    expect(cfg.startsWith(process.env['CLAUDRIFT_TEST_HOME']!)).toBe(true) // sandbox guard
+    const proj = await mkdtemp(join(tmpdir(), 'claudrift-resolve-'))
     try {
       await mkdir(cfg, { recursive: true })
       await mkdir(join(proj, '.claude'), { recursive: true })

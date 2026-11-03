@@ -8,7 +8,7 @@ export function RawLogPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const logEnd = useRef<HTMLDivElement>(null)
 
-  useEffect(() => window.ccwrap.session.onEvent((p) => push(p.localId, p.event)), [push])
+  useEffect(() => window.claudrift.session.onEvent((p) => push(p.localId, p.event)), [push])
   useEffect(() => {
     logEnd.current?.scrollIntoView({ block: 'end' })
   }, [events.length])
@@ -27,10 +27,10 @@ export function RawLogPage(): React.JSX.Element {
       const text = prompt.trim()
       if (!text) return
       setPrompt('')
-      if (localId) await window.ccwrap.session.send({ localId, text })
+      if (localId) await window.claudrift.session.send({ localId, text })
       else {
         if (!cwd) throw new Error('Pick a working directory first')
-        const r = await window.ccwrap.session.start({ cwd, prompt: text })
+        const r = await window.claudrift.session.start({ cwd, prompt: text })
         setLocalId(r.localId)
       }
     })
@@ -38,7 +38,7 @@ export function RawLogPage(): React.JSX.Element {
   const reply = (reqId: string, decision: 'allow' | 'deny'): Promise<void> =>
     run(async () => {
       if (!localId) return
-      await window.ccwrap.session.permissionReply({ localId, reqId, decision })
+      await window.claudrift.session.permissionReply({ localId, reqId, decision })
       removePending(reqId)
     })
 
@@ -55,7 +55,7 @@ export function RawLogPage(): React.JSX.Element {
         <button
           className="rounded-lg border border-white/10 bg-[var(--bg-2)] px-3 py-1"
           disabled={!!localId}
-          onClick={() => void run(async () => setCwd((await window.ccwrap.dialog.pickDirectory()) ?? cwd))}
+          onClick={() => void run(async () => setCwd((await window.claudrift.dialog.pickDirectory()) ?? cwd))}
         >
           Browse
         </button>
@@ -63,14 +63,14 @@ export function RawLogPage(): React.JSX.Element {
         <button
           className="rounded-lg border border-white/10 bg-[var(--bg-2)] px-3 py-1"
           disabled={!localId}
-          onClick={() => void run(() => window.ccwrap.session.interrupt(localId!))}
+          onClick={() => void run(() => window.claudrift.session.interrupt(localId!))}
         >
           Interrupt
         </button>
         <button
           className="rounded-lg border border-white/10 bg-[var(--bg-2)] px-3 py-1"
           onClick={() => {
-            if (localId) void window.ccwrap.session.close(localId)
+            if (localId) void window.claudrift.session.close(localId)
             setLocalId(null)
             clear()
           }}

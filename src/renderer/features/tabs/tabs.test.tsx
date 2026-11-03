@@ -84,7 +84,7 @@ beforeEach(() => {
   window.localStorage.clear()
   vi.mocked(toast).mockClear()
   api = makeApi()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 
 const ws = (): ReturnType<typeof useWorkspaceStore.getState> => useWorkspaceStore.getState()

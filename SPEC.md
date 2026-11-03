@@ -1,4 +1,4 @@
-# ccwrap — Claude Code Desktop Wrapper (Spec v0.1)
+# claudrift — Claude Code Desktop Wrapper (Spec v0.1)
 
 GUI shell around Claude Code. Drives the real engine via `@anthropic-ai/claude-agent-sdk` (latest on npm at spec time: 0.3.312). Does not reimplement the agent.
 
@@ -34,7 +34,7 @@ Renderer (React)  <-- typed IPC (contextBridge) -->  Main (Node)
 
 ## 3. Folder layout
 ```
-ccwrap/
+claudrift/
   package.json
   electron.vite.config.ts
   src/
@@ -172,7 +172,7 @@ Direction: Linear / Raycast / Arc feel. Dark-first, calm, dense but airy, one ac
 **Layout**
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ ▢ ccwrap   [tab][tab][+]                    ⌘K   ─ □ ✕  │ title bar
+│ ▢ claudrift   [tab][tab][+]                    ⌘K   ─ □ ✕  │ title bar
 ├──────┬───────────────────────────────────────┬───────────┤
 │ proj │  chat stream (tool cards, diffs,      │ inspector │
 │ sess │  thinking)                            │ files/diff│
@@ -198,6 +198,6 @@ Left rail: Projects/Sessions, Skills, MCP, Settings, Usage. Right inspector coll
 - Perf/safety: output batched per frame, scrollback cap (default 10k lines), pty killed on tab close/app quit, no env secrets echoed in UI logs.
 
 ## 11. Decisions
-1. App name: **ccwraper**.
+1. App name: **Claudrift**.
 2. Platform: Windows first, cross-platform later (keep all paths/shell logic in `paths.ts` / services so porting is cheap).
 3. Embedded terminal: IN SCOPE, must match the premium design (see 10.1). Built in P2.

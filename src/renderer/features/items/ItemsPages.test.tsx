@@ -36,7 +36,7 @@ function install(): void {
   create = vi.fn(async (a: { name: string }): Promise<ItemMutationResult> => ({ ok: true, ref: { kind: 'skill', scope: 'user', name: a.name } }))
   rename = vi.fn(async (): Promise<ItemMutationResult> => ({ ok: true, ref: { kind: 'skill', scope: 'user', name: 'beta' } }))
   del = vi.fn(async (): Promise<ItemMutationResult> => ({ ok: true, ref: { kind: 'skill', scope: 'user', name: 'alpha' }, trashPath: 'C:\\ud\\trash\\alpha' }))
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     app: { info: vi.fn(async () => ({ claudeSource: 'bundled', sdkVersion: 'x', platform: 'win32', trashDir: 'C:\\ud\\trash' })) },
     items: {
       list: vi.fn(
@@ -246,7 +246,7 @@ describe('dialogs', () => {
     await userEvent.click(screen.getByRole('button', { name: /Delete/ }))
     const dlg = await screen.findByRole('dialog')
     expect(del).not.toHaveBeenCalled()
-    expect(within(dlg).getByText(/ccwraper trash/)).toBeTruthy()
+    expect(within(dlg).getByText(/Claudrift trash/)).toBeTruthy()
     await waitFor(() => expect(within(dlg).getByText(/C:\\ud\\trash/)).toBeTruthy())
     await userEvent.click(within(dlg).getByRole('button', { name: 'Move to trash' }))
     await waitFor(() => expect(del).toHaveBeenCalledTimes(1))

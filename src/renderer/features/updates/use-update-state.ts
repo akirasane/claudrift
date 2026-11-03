@@ -5,7 +5,7 @@ import type { UpdateState } from '@shared/app'
 export function useUpdateState(): UpdateState {
   const [state, setState] = useState<UpdateState>({ kind: 'disabled' })
   useEffect(() => {
-    const api = window.ccwrap?.update
+    const api = window.claudrift?.update
     if (!api) return
     let alive = true
     void api

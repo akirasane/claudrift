@@ -220,8 +220,8 @@ async function main(): Promise<void> {
   console.log('\n=== TEST 4: permission + interrupt ===')
   // settingSources: [] => no user allow-rules/plugins, so Bash must go through canUseTool (and it is cheaper).
   const prompt4 = process.env['SPIKE_BASH']
-    ? 'Use the Bash tool to run exactly: npm run ccwrap-spike-nonexistent. Then reply done.'
-    : 'Use the Write tool to create a file named hello.txt in the current directory containing exactly: ccwrap-spike. Then reply done.'
+    ? 'Use the Bash tool to run exactly: npm run claudrift-spike-nonexistent. Then reply done.'
+    : 'Use the Write tool to create a file named hello.txt in the current directory containing exactly: claudrift-spike. Then reply done.'
   const c = await start('C', prompt4, {
     settingSources: [],
     ...(process.env['SPIKE_THINKING'] ? { thinking: true } : {}),

@@ -77,7 +77,7 @@ beforeEach(() => {
   window.localStorage.clear()
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {} })
   useWorkspaceStore.setState({ activeConvId: undefined })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 afterEach(() => {
   cleanup()
@@ -333,7 +333,7 @@ describe('ToolCard live duration', () => {
 
 describe('StatusBar', () => {
   const renderBar = (): void => {
-    window.localStorage.setItem('ccwrap.ctxWindow', JSON.stringify({ 'claude-haiku-5-5': 10000 }))
+    window.localStorage.setItem('claudrift.ctxWindow', JSON.stringify({ 'claude-haiku-5-5': 10000 }))
     useWorkspaceStore.setState({ activeConvId: 'c1' })
     render(
       <QueryClientProvider client={queryClient}>

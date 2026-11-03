@@ -7,7 +7,7 @@ describe('DesignPage', () => {
   it('renders every section without errors and without touching IPC', async () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const boom = vi.fn(() => Promise.reject(new Error('IPC touched')))
-    ;(window as unknown as { ccwrap: unknown }).ccwrap = { session: { start: boom, send: boom, interrupt: boom } }
+    ;(window as unknown as { claudrift: unknown }).claudrift = { session: { start: boom, send: boom, interrupt: boom } }
     render(<DesignPage />)
     for (const id of ['colors', 'type', 'surfaces', 'ansi', 'motion', 'primitives', 'chat']) {
       expect(screen.getByTestId(`section-${id}`)).toBeInTheDocument()
@@ -28,7 +28,7 @@ describe('DesignPage', () => {
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(boom).not.toHaveBeenCalled()
-    expect((window as unknown as { ccwrap: { session: { start: unknown } } }).ccwrap.session.start).toBe(boom)
+    expect((window as unknown as { claudrift: { session: { start: unknown } } }).claudrift.session.start).toBe(boom)
     expect(err).not.toHaveBeenCalled()
     err.mockRestore()
   }, 20_000) // renders the whole design catalog: ~1.5 s idle, >3 s under parallel CPU load

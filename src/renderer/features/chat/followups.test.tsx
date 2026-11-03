@@ -57,7 +57,7 @@ beforeEach(() => {
   resetTerminalBus()
   api.session.supportedModels.mockResolvedValue(MODELS)
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {}, draftModels: {} })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 afterEach(() => vi.useRealTimers())
 
@@ -78,7 +78,7 @@ describe('model picker', () => {
     seedLive([{ t: 'init', sessionId: 's', model: 'sonnet', tools: [], mcp: [], slashCommands: [], cwd: target.cwd } as SessionEvent])
     render(<Composer convId="c1" />)
     await waitFor(() => expect(api.session.supportedModels).toHaveBeenCalledWith('L1'))
-    await waitFor(() => expect(window.localStorage.getItem('ccwrap.models')).toContain('claude-opus-4-1-20250805'))
+    await waitFor(() => expect(window.localStorage.getItem('claudrift.models')).toContain('claude-opus-4-1-20250805'))
     await openModelMenu()
     expect(screen.getAllByTestId('model-option')).toHaveLength(3)
     expect(screen.queryByText('Opus 4.1')).toBeNull()

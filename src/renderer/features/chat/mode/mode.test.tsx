@@ -51,7 +51,7 @@ beforeAll(() => {
 beforeEach(() => {
   vi.clearAllMocks()
   api = makeApi()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
   resetModePrefsForTest()
   useBypassConfirm.getState().close()
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {}, draftModels: {}, drafts: {}, lastActive: {} })

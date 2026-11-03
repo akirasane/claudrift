@@ -19,7 +19,7 @@ function useCwdExists(cwd: string): boolean | null {
   React.useEffect(() => {
     let cancelled = false
     setExists(null)
-    const api = typeof window !== 'undefined' ? window.ccwrap?.history : undefined
+    const api = typeof window !== 'undefined' ? window.claudrift?.history : undefined
     if (!api) return
     api
       .listProjects()

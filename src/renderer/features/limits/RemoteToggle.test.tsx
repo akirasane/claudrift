@@ -24,7 +24,7 @@ beforeEach(() => {
   useWorkspaceStore.setState({ cwd: 'C:\proj' })
   start.mockImplementation(async () => (state = { status: 'starting', log: [] }))
   stop.mockImplementation(async () => (state = { status: 'off', log: [] }))
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     remote: {
       getState: async () => state,
       start,

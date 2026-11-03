@@ -372,7 +372,7 @@ export class GitService {
     const env: Record<string, string> = {}
     if (indexPath && existsSync(indexPath)) {
       try {
-        dir = await fsp.mkdtemp(path.join(tmpdir(), 'ccwrap-gitidx-'))
+        dir = await fsp.mkdtemp(path.join(tmpdir(), 'claudrift-gitidx-'))
         const copy = path.join(dir, 'index')
         await fsp.copyFile(indexPath, copy)
         env['GIT_INDEX_FILE'] = copy

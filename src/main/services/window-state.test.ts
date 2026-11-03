@@ -12,7 +12,7 @@ const second = { x: 1920, y: 0, width: 2560, height: 1400 }
 let dir: string
 let file: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'ccwrap-ws-'))
+  dir = mkdtempSync(join(tmpdir(), 'claudrift-ws-'))
   file = join(dir, 'window-state.json')
 })
 afterEach(() => {

@@ -48,13 +48,13 @@ export function PluginsPage({ cwd }: { cwd?: string }): React.JSX.Element {
 
   const list = useQuery({
     queryKey: ['plugins', 'list', cwd ?? ''],
-    queryFn: () => window.ccwrap.plugins.list({ ...(cwd ? { cwd } : {}) })
+    queryFn: () => window.claudrift.plugins.list({ ...(cwd ? { cwd } : {}) })
   })
   const refresh = (): Promise<void> => qc.invalidateQueries({ queryKey: ['plugins'] })
 
   const mutation = useMutation({
     mutationFn: async (v: { action: PluginsMutateArgs; ok: string }) => {
-      const res = await window.ccwrap.plugins.mutate({ ...(cwd ? { cwd } : {}), action: v.action })
+      const res = await window.claudrift.plugins.mutate({ ...(cwd ? { cwd } : {}), action: v.action })
       return { res, ok: v.ok }
     },
     onSuccess: async ({ res, ok }) => {
@@ -242,7 +242,7 @@ function BrowseTab(props: {
   const q = useDebounced(query, 250)
   const res = useQuery({
     queryKey: ['plugins', 'browse', q, props.cwd ?? ''],
-    queryFn: () => window.ccwrap.plugins.browse({ query: q, limit: 30, ...(props.cwd ? { cwd: props.cwd } : {}) }),
+    queryFn: () => window.claudrift.plugins.browse({ query: q, limit: 30, ...(props.cwd ? { cwd: props.cwd } : {}) }),
     placeholderData: (prev) => prev
   })
   return (

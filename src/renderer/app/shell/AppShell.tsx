@@ -95,7 +95,7 @@ function Shell(): React.JSX.Element {
 
   // Subscribe to main-process session events once for the whole app.
   useEffect(() => {
-    if (!window.ccwrap) return
+    if (!window.claudrift) return
     return initIpcBridge()
   }, [])
 
@@ -115,7 +115,7 @@ function Shell(): React.JSX.Element {
 
   // Watch the active project's config files in main.
   useEffect(() => {
-    void window.ccwrap?.config?.watchProject(cwd ?? null)?.catch(() => {})
+    void window.claudrift?.config?.watchProject(cwd ?? null)?.catch(() => {})
   }, [cwd])
 
   useEffect(() => {

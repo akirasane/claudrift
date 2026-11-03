@@ -8,7 +8,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { AutoResumeController, type Pause, type PersistedAutoResume } from './controller'
 
 /** localStorage key for pending pauses and the loop-guard history (survives an app restart). */
-export const AUTORESUME_KEY = 'ccwrap.autoresume.v1'
+export const AUTORESUME_KEY = 'claudrift.autoresume.v1'
 
 interface AutoResumeView {
   pauses: Record<string, Pause>
@@ -66,9 +66,9 @@ async function resumeConv(convId: string, prompt: string): Promise<void> {
  */
 export function startAutoResume(): () => void {
   if (controller) return () => {}
-  const report = (r: Parameters<NonNullable<Window['ccwrap']['autoResume']>['report']>[0]): void => {
+  const report = (r: Parameters<NonNullable<Window['claudrift']['autoResume']>['report']>[0]): void => {
     try {
-      window.ccwrap?.autoResume?.report(r)
+      window.claudrift?.autoResume?.report(r)
     } catch {
       /* fire-and-forget */
     }
@@ -148,11 +148,11 @@ export function startAutoResume(): () => void {
   }
   let offPrefs: (() => void) | undefined
   try {
-    void window.ccwrap?.prefs
+    void window.claudrift?.prefs
       ?.get()
       .then((p) => applyPrefs(p.autoResume))
       .catch(() => {})
-    offPrefs = window.ccwrap?.prefs?.onChanged((p) => applyPrefs(p.autoResume))
+    offPrefs = window.claudrift?.prefs?.onChanged((p) => applyPrefs(p.autoResume))
   } catch {
     /* prefs unavailable: auto-resume stays off */
   }

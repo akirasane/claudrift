@@ -32,7 +32,7 @@ All probing was read-only. Nothing was installed into the repo.
 - P1 D3 and P2 D8 said `node:sqlite` waits for a feature that needs queries. P4 has none:
   - the tab layout is a list of a few dozen small records at most
   - usage aggregation runs in memory over a per-file cache (D5)
-- **Renderer (`localStorage`):** `ccwrap.tabs.v1` (D2) and `ccwrap.palette.recent` (D7). This is the same style as `ccwrap.lastCwd`, `ccwrap.ctxWindow` and the terminal keys.
+- **Renderer (`localStorage`):** `claudrift.tabs.v1` (D2) and `claudrift.palette.recent` (D7). This is the same style as `claudrift.lastCwd`, `claudrift.ctxWindow` and the terminal keys.
 - **Main (`<userData>/*`, written with the existing `atomic-write`):** `prefs.json` (D4), `window-state.json`, `usage-cache.json` and `usage-ledger.jsonl` (D5).
 - Prefs live in main, not in `localStorage`, because main needs them before the renderer exists: for hotkey registration, window bounds and the notification policy.
 - **SPEC deviation:** the SPEC section 1 "Local DB" stays unused in v1. Recorded.
@@ -76,11 +76,11 @@ Decisions:
   - A background turn that finishes only gets the `unread` mark (no toast).
   - OS notifications are main's job and fire only when the window is unfocused (D3).
 - **Persistence:**
-  - `ccwrap.tabs.v1 = {tabs: [{convId, cwd, sessionId?, title?}], activeConvId}`, written on each tab-list or active change (debounced 300 ms).
+  - `claudrift.tabs.v1 = {tabs: [{convId, cwd, sessionId?, title?}], activeConvId}`, written on each tab-list or active change (debounced 300 ms).
   - On start, tabs with a `sessionId` come back as history conversations whose transcript loads **lazily on first activation**. Draft tabs without a session id are dropped.
   - Live sessions never survive an app restart; they become resumable history, as today.
 - **Title bar** (40 px; the `titleBarOverlay` already reserves the right edge through `env(titlebar-area-width)`):
-  - Left to right: the `ccwrap` label; a `no-drag` tab strip; a `+` button; the drag gap; the palette trigger (D7, 260 x 26, shrinking to 120); the Interrupt button.
+  - Left to right: the `claudrift` label; a `no-drag` tab strip; a `+` button; the drag gap; the palette trigger (D7, 260 x 26, shrinking to 120); the Interrupt button.
   - Tabs are 28 high, 72 to 240 wide, with an 8 px radius. The active tab gets `bg-2` plus the 2 px accent underline that the current single tab has.
   - On overflow the strip scrolls horizontally: the mouse wheel maps to `scrollLeft`, the active tab is scrolled into view, and the edges fade.
   - The drag region is the gap between the strip and the trigger. Every interactive element is `no-drag`.
@@ -113,7 +113,7 @@ Decisions:
   - Restore, show and focus the window, then send `app:focusSession {localId}`. The renderer activates that tab and the chat view.
   - Notification objects are kept in a Set until `close` or `click`, so they are not garbage collected. A collected notification loses its click handler (a known Electron pitfall).
 - **Windows identity:**
-  - Main calls `app.setAppUserModelId('com.ccwraper.app')`, equal to the electron-builder `appId`, so the NSIS Start-menu shortcut attributes the toasts to "ccwraper".
+  - Main calls `app.setAppUserModelId('com.claudrift.app')`, equal to the electron-builder `appId`, so the NSIS Start-menu shortcut attributes the toasts to "Claudrift".
   - In dev and in `win-unpacked` there is no shortcut, and Windows may not show toasts from an unregistered AUMID. WP2 measures this.
   - If the toasts do not show, the fallback always works: `flashFrame` (permission) plus a taskbar overlay badge (`win.setOverlayIcon`, cleared on focus).
   - The toast check for the installed app becomes a human step in WP13.
@@ -148,14 +148,14 @@ Decisions:
   - Bucket by the **local calendar date** of `timestamp`, by model and by `cwd` (normalized with `normalizeCwdKey`), counting distinct `sessionId`s.
 - **Only numbers are kept.** No text, tool input or message content is retained, logged or cached. Errors are logged as `file:lineNumber: reason`.
 
-**Cost (exact, sessions run in ccwraper only):**
+**Cost (exact, sessions run in Claudrift only):**
 - The SDK's `result.modelUsage[model].costUSD` is cumulative per query process.
 - Main appends one ledger line per `result` to `<userData>/usage-ledger.jsonl`: `{ts, sdkSessionId, cwdKey, models: {model: {costUsd, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens}}}`. Each line holds the **delta** since that localId's previous result.
 - For this, the adapter adds per-model, cumulative `modelUsage` to the `result` event (contract 2.3).
 
 **No price table:**
 - Estimating CLI-session cost from a hard-coded price list would be wrong for new models and plans.
-- The dashboard labels cost "Exact cost of sessions run in ccwraper (since <first ledger date>)" and tokens "All Claude Code sessions on this machine".
+- The dashboard labels cost "Exact cost of sessions run in Claudrift (since <first ledger date>)" and tokens "All Claude Code sessions on this machine".
 - Recorded as a deliberate limit.
 
 **Cache and performance (target: 60 MB+ transcripts):**
@@ -221,7 +221,7 @@ Decisions:
 - **status:**
   - Runs `status --porcelain=v2 --branch -z --untracked-files=normal`, plus `diff --numstat -z` and `diff --cached --numstat -z`. The numstat calls are skipped above 500 entries.
   - The output is parsed into `GitStatus` (contract 2.6), capped at 2,000 entries with `truncated` and `total`.
-  - A `safe.directory` error ("dubious ownership") becomes `unsafe_repo` with git's own message. ccwraper never edits git config.
+  - A `safe.directory` error ("dubious ownership") becomes `unsafe_repo` with git's own message. Claudrift never edits git config.
 - **diff:**
   - Runs `diff [--cached] --no-ext-diff --no-textconv -U3 -- <path>`.
   - Capped at 1 MB or 5,000 lines (`truncated`). "Binary files differ" sets `binary`.
@@ -274,7 +274,7 @@ Decisions:
 **Fuzzy matching:**
 - A pure scorer: subsequence match, with bonuses for word starts, consecutive runs and a prefix match. Keywords count at half weight.
 - Ordering: groups in a fixed order, then by score, then by recency.
-- With an empty query: Recent first (the last 8 run ids, from `ccwrap.palette.recent`), then Actions and Navigation.
+- With an empty query: Recent first (the last 8 run ids, from `claudrift.palette.recent`), then Actions and Navigation.
 - At most 50 rows are rendered.
 
 **UI (design README):**
@@ -309,7 +309,7 @@ Decisions:
   - `dependencies` becomes: `@anthropic-ai/claude-agent-sdk` (its optional `-win32-x64` package comes with it), `node-pty`, `chokidar`, `yaml`, `zod`.
   - A WP7 check asserts that every `require("x")` / `import("x")` in `out/main/index.js` is a declared dependency or a Node builtin.
 - **`electron-builder.yml`** (WP7):
-  - Identity: `appId: com.ccwraper.app`, `productName: ccwraper`.
+  - Identity: `appId: com.claudrift.app`, `productName: Claudrift`.
   - Layout: `directories: {output: dist, buildResources: build}`, `files: [out/**, package.json, "!**/*.map"]`.
   - Archive: `asar: true`, `asarUnpack: [node_modules/node-pty/**, node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/**]`.
   - No rebuilds: `npmRebuild: false`, `nodeGypRebuild: false`, `buildDependenciesFromSource: false`. node-pty is N-API with prebuilds, so no VS toolchain is needed.
@@ -325,7 +325,7 @@ Decisions:
   - A new `toUnpackedPath(p)` maps `<sep>app.asar<sep>` to `<sep>app.asar.unpacked<sep>`.
   - `resolveClaudeExecutable()` returns the user's binary when that one is chosen, else `toUnpackedPath(bundledClaudePath())`. The path is always explicit, so the SDK never resolves inside the archive.
   - When `__dirname` is inside an asar, the module search starts at `__dirname` only, never at `process.cwd()`.
-  - A test-only override, `CCWRAP_CLAUDE_SOURCE=bundled`, forces the bundled binary so the packaged smoke can prove it.
+  - A test-only override, `CLAUDRIFT_CLAUDE_SOURCE=bundled`, forces the bundled binary so the packaged smoke can prove it.
 - **The node-pty worker inside asar:**
   - WP7 verifies in `win-unpacked` that a pwsh tab and a Git Bash tab open, echo and exit, and that `OpenConsole.exe` is spawned from `app.asar.unpacked`.
   - If the conout worker fails to load from `app.asar`, the fallback is `asar: false` for v1: a slower first start and many files, but correct. Recorded in the findings.
@@ -338,8 +338,8 @@ Decisions:
   - electron-builder converts the PNG to `.ico`.
   - The PNG is committed. No image dependency is needed.
 - **userData:**
-  - Packaged: `%APPDATA%\ccwraper` (from productName).
-  - **Dev moves to `%APPDATA%\ccwraper-dev`.** `main/index.ts` sets it before `ready` when `!app.isPackaged` and no `--user-data-dir` switch was given.
+  - Packaged: `%APPDATA%\Claudrift` (from productName).
+  - **Dev moves to `%APPDATA%\Claudrift-dev`.** `main/index.ts` sets it before `ready` when `!app.isPackaged` and no `--user-data-dir` switch was given.
   - So a dev build never shares backups, trash, prefs, the ledger or `localStorage` with an installed app.
   - Cost: the dev profile's `localStorage` (last cwd, ctx windows) starts empty once.
 - **CSP in production:**
@@ -356,7 +356,7 @@ Decisions:
   - Nothing is published or uploaded.
 
 ### D9. Version and naming
-- `package.json`: `name: ccwraper` (unchanged); `productName: ccwraper` (added).
+- `package.json`: `name: Claudrift` (unchanged); `productName: Claudrift` (added).
 - The P4 build is version `0.4.0`. The lead sets `1.0.0` only after the WP13 v1 checklist passes.
 - `AppInfo` gains `version`, `electronVersion`, `packaged` and `userDataDir`.
 
@@ -364,7 +364,7 @@ Decisions:
 - **Why deferred:**
   - `electron-updater` needs a publish target (GitHub releases or a generic URL) and a release process. Neither exists.
   - With unsigned builds, every update through the NSIS updater would bring a SmartScreen prompt.
-- **What v1 ships:** no update code and no `electron-updater` dependency. Preferences > About shows the version and "Updates: install a newer ccwraper build to update."
+- **What v1 ships:** no update code and no `electron-updater` dependency. Preferences > About shows the version and "Updates: install a newer Claudrift build to update."
 - **The future path** (recorded in the README, not implemented):
   - code signing first
   - then `electron-updater` with `publish: {provider: github, owner, repo}`
@@ -453,7 +453,7 @@ Decisions:
 - Never upload anything, and never create or use a signing certificate.
 - Never run the NSIS installer in automation.
 
-**No git writes** by ccwraper code or tests outside temp repos. The git service runs only `status`, `diff`, `log` and `rev-parse`, which a test asserts over the argument lists.
+**No git writes** by Claudrift code or tests outside temp repos. The git service runs only `status`, `diff`, `log` and `rev-parse`, which a test asserts over the argument lists.
 
 **Live SDK runs cost money:**
 - Only WP5 (one dev check), WP7 (one packaged turn) and WP13 run them, in `D:\claude-tmp\p4-live`, on haiku.
@@ -465,7 +465,7 @@ Decisions:
 
 **Selector stability:** the Zustand 5 + React 19 rule (P3 D13) applies to the tab strip, tab status and palette sources. Memoize per conversation or list reference, or use `useShallow`.
 
-**Verification:** every WP runs `npm run typecheck`, `npm test` and `npm run build`. UI WPs add Testing Library tests with a mocked `window.ccwrap`.
+**Verification:** every WP runs `npm run typecheck`, `npm test` and `npm run build`. UI WPs add Testing Library tests with a mocked `window.claudrift`.
 
 ---
 
@@ -584,7 +584,7 @@ New schemas in `ipc.ts`:
 - `GitDiffSchema {cwd, path, staged: boolean}`: `path` is 1..4096 characters, with no NUL, not absolute, and no `..` segment
 - `GitLogSchema {cwd, limit}`: `limit` is an int in 1..200
 
-### 2.7 `CcwrapApi` additions (`ipc.ts`) and preload wiring
+### 2.7 `ClaudriftApi` additions (`ipc.ts`) and preload wiring
 ~~~ts
 app: {
   info(): Promise<AppInfo>
@@ -614,7 +614,7 @@ export function quoteUnsafeScalars(text: string): { text: string; keys: string[]
 ### 2.9 Main wiring (WP0)
 **`paths.ts`** (+ tests with Windows fixtures, asar and non-asar paths):
 - `toUnpackedPath(p)` and `isInsideAsar(p)`
-- `resolveClaudeExecutable()` per D8, including `CCWRAP_CLAUDE_SOURCE=bundled`
+- `resolveClaudeExecutable()` per D8, including `CLAUDRIFT_CLAUDE_SOURCE=bundled`
 - asar-aware search starts in `readSdkVersions` and `bundledClaudePath`
 - `prefsPath(ud)`, `windowStatePath(ud)`, `usageCachePath(ud)`, `usageLedgerPath(ud)`
 - `transcriptsRoot(env?, home?)`, which is `<configDir>/projects`
@@ -752,7 +752,7 @@ Waves:
 - `npm run dev`:
   - the rail shows Usage, Git and Preferences, and each placeholder renders
   - chat works as in P3
-  - the userData dir is `ccwraper-dev`
+  - the userData dir is `Claudrift-dev`
   - Ctrl+R does not reload
 - `out/main/index.js` requires only declared `dependencies` and builtins (a `grep` of `require("` / `import("`)
 - `resolveClaudeExecutable()` tests: an asar fixture path maps to `app.asar.unpacked`, and the search never starts at `process.cwd()` inside an asar
@@ -874,7 +874,7 @@ Waves:
 
 **One live check** (dev app, haiku, scratch project `D:\claude-tmp\p4-live`, under $0.05): two tabs streaming at once, switching between them mid-stream. Both transcripts complete correctly and the composer drafts survive.
 
-**Accept** (Testing Library with a mocked `window.ccwrap`):
+**Accept** (Testing Library with a mocked `window.claudrift`):
 - Opening and switching:
   - opening a history session twice activates the same tab
   - a draft typed in tab A survives a switch to B and back
@@ -918,11 +918,11 @@ Waves:
 **Do:**
 1. Everything in D8: the config, the icon script and the committed PNG, and the main-deps check.
 2. Run `npm run dist:dir`.
-3. Do a manual packaged smoke of `dist\win-unpacked\ccwraper.exe`, launched with `CLAUDE_CONFIG_DIR=D:\claude-tmp\p4-pkg-cfg` and `--user-data-dir=D:\claude-tmp\p4-pkg-ud`:
+3. Do a manual packaged smoke of `dist\win-unpacked\Claudrift.exe`, launched with `CLAUDE_CONFIG_DIR=D:\claude-tmp\p4-pkg-cfg` and `--user-data-dir=D:\claude-tmp\p4-pkg-ud`:
    - the window opens, the fonts load, and the console shows no CSP violations
    - `app.info()` shows `packaged: true`, the version and the userData dir
    - the terminal opens pwsh and Git Bash; `OpenConsole.exe` runs from `...\resources\app.asar.unpacked\node_modules\node-pty\prebuilds\win32-x64\conpty\`; typing `exit` leaves no descendants
-   - with `CCWRAP_CLAUDE_SOURCE=bundled`, `app.info().claudePath` is under `app.asar.unpacked`
+   - with `CLAUDRIFT_CLAUDE_SOURCE=bundled`, `app.info().claudePath` is under `app.asar.unpacked`
    - **one** haiku "Reply with just the word hi" turn with the bundled binary and the **real** config (the sandbox has no login), cwd `D:\claude-tmp\p4-live`, under $0.02
    - a second launch focuses the first window (single instance)
 4. Run `npm run dist:win` once and record the installer size and the build time. **Do not run the installer.**
@@ -1045,7 +1045,7 @@ Waves:
 - any remaining real-time test (chokidar) uses an explicit `waitFor` with a reasoned timeout
 
 ### WP13. Integration, packaged build, live checks, smoke, findings (finishes last)
-**Owns:** `README.md` (run, packaging, signing and update notes), `docs/P4-FINDINGS.md` (new), `scripts/cdp-smoke.ts`, and `scripts/cdp-client.ts` (a `CCWRAP_SMOKE_EXE` launch option for the packaged exe). Cross-file fixes only with the lead's OK.
+**Owns:** `README.md` (run, packaging, signing and update notes), `docs/P4-FINDINGS.md` (new), `scripts/cdp-smoke.ts`, and `scripts/cdp-client.ts` (a `CLAUDRIFT_SMOKE_EXE` launch option for the packaged exe). Cross-file fixes only with the lead's OK.
 
 **Checklist:**
 1. **Gates:** typecheck, test and build are green. Record the chunk sizes: the entry, the palette, usage, git, preferences, and the tab strip inside the entry.
@@ -1081,13 +1081,13 @@ Waves:
    - **Real Agents page:** the agent that showed "Broken" in P3 now shows the lenient chip (display only, no save).
    - **Unchanged files:**
      - the `sha1` of `~/.claude/settings.json` and `CLAUDE.md`, and the `skills` / `agents` listings, are identical before and after
-     - `git status` of the ccwrap repo is unchanged by the Git page
+     - `git status` of the claudrift repo is unchanged by the Git page
    - **Auth status:** run `app.authStatus()` once and record only the state value.
 4. **Packaged:**
-   - Run `npm run dist:dir`, then `npm run smoke` with `CCWRAP_SMOKE_EXE=dist\win-unpacked\ccwraper.exe` and the sandbox config. It checks the fonts, every page (including Usage, Git and Preferences), the palette, the terminal, and a tab open / close.
+   - Run `npm run dist:dir`, then `npm run smoke` with `CLAUDRIFT_SMOKE_EXE=dist\win-unpacked\Claudrift.exe` and the sandbox config. It checks the fonts, every page (including Usage, Git and Preferences), the palette, the terminal, and a tab open / close.
    - `npm run dist:win` builds the installer; record its size.
    - **Running the installer, the installed-app toast and a Start-menu launch are listed as human steps.**
-5. **Smoke script:** `scripts/cdp-smoke.ts` visits Usage, Git and Preferences, opens the palette (Ctrl+K, type, Enter) and opens and closes a second tab. `CCWRAP_SMOKE_LIVE=1` keeps the P3 subagent turn.
+5. **Smoke script:** `scripts/cdp-smoke.ts` visits Usage, Git and Preferences, opens the palette (Ctrl+K, type, Enter) and opens and closes a second tab. `CLAUDRIFT_SMOKE_LIVE=1` keeps the P3 subagent turn.
 
 **Accept:** the checklist passes, or each failure is recorded with a decision. `docs/P4-FINDINGS.md` records:
 - the live API cost
@@ -1102,7 +1102,7 @@ Waves:
   - auto-update deferred (D10) and unsigned builds (D8)
   - dark only (D12)
   - the hotkey off by default, and no tray (D4)
-  - the dev userData `ccwraper-dev` (D8)
+  - the dev userData `Claudrift-dev` (D8)
 - the v1 readiness checklist for the lead (the 1.0.0 version bump is the lead's call)
 
 ---
@@ -1148,7 +1148,7 @@ Waves:
 ## 5. Project-specific risks found while reading
 | Risk | Where | Mitigation |
 |---|---|---|
-| The SDK resolves `claude.exe` inside `app.asar`, where it cannot be spawned; `bundledClaudePath` does the same | SDK `createRequire().resolve`, `paths.ts` | `asarUnpack` the win32-x64 package; always pass an explicit `toUnpackedPath` path (WP0); the packaged smoke proves it with `CCWRAP_CLAUDE_SOURCE=bundled` (WP7) |
+| The SDK resolves `claude.exe` inside `app.asar`, where it cannot be spawned; `bundledClaudePath` does the same | SDK `createRequire().resolve`, `paths.ts` | `asarUnpack` the win32-x64 package; always pass an explicit `toUnpackedPath` path (WP0); the packaged smoke proves it with `CLAUDRIFT_CLAUDE_SOURCE=bundled` (WP7) |
 | `readSdkVersions` and `bundledClaudePath` search from `process.cwd()` first, so a packaged app could load a foreign SDK | `paths.ts` | Inside an asar, start at `__dirname` only (WP0) |
 | node-pty's conout worker path rewrite covers `node_modules.asar`, not `app.asar` | `windowsConoutConnection.js` | `asarUnpack` node-pty; verify in `win-unpacked`; fallback `asar: false` (WP7) |
 | electron-builder would ship every renderer dependency in `app.asar/node_modules` | `package.json` | Move the renderer-only deps to devDependencies; the main-deps check (WP0, WP7) |
@@ -1164,6 +1164,6 @@ Waves:
 | With an unregistered AUMID, toasts may not show in dev or `win-unpacked` | Windows | The `flashFrame` + overlay badge fallback; the installed check is a human step |
 | The `claude auth status` output may include account details, and its shape is undocumented | WP1 | Map it to a 3-state enum and drop the rest; learn the shape only in a sandbox config |
 | Global shortcuts steal system-wide chords | WP2 | Off by default, conflicts reported, unregistered on quit |
-| Dev and packaged builds share `%APPDATA%\ccwraper` | `app.getPath('userData')` | Dev uses `ccwraper-dev` (WP0) |
+| Dev and packaged builds share `%APPDATA%\Claudrift` | `app.getPath('userData')` | Dev uses `Claudrift-dev` (WP0) |
 | Live runs load the user's real hooks and plugins (as in P2 / P3) | WP5, WP7, WP13 | Chats only in the scratch project, on haiku, within the D14 budgets |
 | The harness classifier blocked the P3 live driver | WP13 | When blocked, record the exact manual steps; never weaken the safety rules to get around it |

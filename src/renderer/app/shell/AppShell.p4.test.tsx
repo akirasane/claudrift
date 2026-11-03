@@ -22,7 +22,7 @@ beforeEach(() => {
     terminalOpen: false
   })
   window.localStorage.clear()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     session: { onEvent: vi.fn(() => () => {}), supportedModels: vi.fn(async () => []) },
     dialog: { pickDirectory: vi.fn(async () => null) },
     history: { listProjects: vi.fn(async () => []), list: vi.fn(async () => []), load: vi.fn(async () => []) },

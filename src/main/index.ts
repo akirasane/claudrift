@@ -26,15 +26,27 @@ import { SessionManager } from './services/session-manager'
 import { UpdateService } from './services/update-service'
 import { UsageLedger } from './services/usage-ledger'
 import { UsageService } from './services/usage-service'
+import { migrateUserDataDir } from './user-data-migration'
 import { loadWindowState, trackWindowState } from './services/window-state'
 
 // A dev build must never share prefs, trash, ledger or localStorage with an installed app (P4 D8).
 // Must run before anything reads app.getPath('userData'). An explicit --user-data-dir wins.
-if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
-  app.setPath('userData', join(app.getPath('appData'), 'ccwraper-dev'))
+if (!app.commandLine.hasSwitch('user-data-dir')) {
+  // Pre-rename (ccwraper) data carries over: move the old dir to the new one, or keep using it if that fails.
+  const appData = app.getPath('appData')
+  const dev = !app.isPackaged
+  const oldDir = join(appData, dev ? 'ccwraper-dev' : 'ccwraper')
+  const newDir = join(appData, dev ? 'Claudrift-dev' : 'Claudrift')
+  const moved = migrateUserDataDir(oldDir, newDir)
+  if (moved === 'use-old') {
+    console.warn('[claudrift] could not move legacy userData, continuing to use', oldDir)
+    app.setPath('userData', oldDir)
+  } else if (dev) {
+    app.setPath('userData', newDir)
+  }
 }
-// Same as the electron-builder appId, so toasts are attributed to "ccwraper" once installed.
-app.setAppUserModelId('com.ccwraper.app')
+// Same as the electron-builder appId, so toasts are attributed to "Claudrift" once installed.
+app.setAppUserModelId('com.claudrift.app')
 
 const userData = app.getPath('userData')
 
@@ -54,7 +66,7 @@ function isHttpUrl(url: string): boolean {
 const getWindow = (): BrowserWindow | null => (win && !win.isDestroyed() ? win : null)
 
 const prefs = new PrefsService(prefsPath(userData), {
-  onCorrupt: ({ reason }) => console.warn('[ccwrap] prefs.json was unusable, using defaults:', reason)
+  onCorrupt: ({ reason }) => console.warn('[claudrift] prefs.json was unusable, using defaults:', reason)
 })
 const pluginRegistry = new PluginRegistry()
 const usage = new UsageService({
@@ -73,19 +85,19 @@ const updates = new UpdateService({
   isPackaged: app.isPackaged,
   prefs,
   broadcast: (state) => getWindow()?.webContents.send(IpcChannels.updateState, state),
-  log: (m) => console.warn('[ccwrap]', m)
+  log: (m) => console.warn('[claudrift]', m)
 })
 
 const limits = new LimitsService({
   file: limitsPath(userData),
   broadcast: (state) => getWindow()?.webContents.send(IpcChannels.limitsState, state),
-  log: (m) => console.warn('[ccwrap]', m)
+  log: (m) => console.warn('[claudrift]', m)
 })
 // Polls plan usage every 30 s through one idle SDK session so the 5h / 7d bars move without any chat.
 const usageProbe = new UsageProbe({
   ingest: (l) => limits.ingest(l),
   enabled: () => prefs.get().showLimitsBar,
-  log: (m) => console.warn('[ccwrap]', m)
+  log: (m) => console.warn('[claudrift]', m)
 })
 const remote = new RemoteControlService({
   broadcast: (state) => getWindow()?.webContents.send(IpcChannels.remoteState, state)
@@ -178,7 +190,7 @@ function combineWindowDisposers(...ds: Disposer[]): Disposer {
       try {
         d()
       } catch (err) {
-        console.warn('[ccwrap] window dispose failed', err instanceof Error ? err.message : err)
+        console.warn('[claudrift] window dispose failed', err instanceof Error ? err.message : err)
       }
     }
   }

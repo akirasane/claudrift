@@ -11,12 +11,12 @@ export const useToolCardPrefs = create<ToolCardPrefsState>((set) => ({ expanded:
 
 let started = false
 
-/** Reads the preference once and follows changes. Safe without window.ccwrap (stays collapsed). */
+/** Reads the preference once and follows changes. Safe without window.claudrift (stays collapsed). */
 export function useToolCardsExpanded(): boolean {
   const v = useToolCardPrefs((s) => s.expanded)
   React.useEffect(() => {
     if (started) return
-    const api = window.ccwrap?.prefs
+    const api = window.claudrift?.prefs
     if (!api) return
     started = true
     void Promise.resolve(api.get?.())

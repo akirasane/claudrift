@@ -4,7 +4,7 @@ import type { FsChangedPayload, PtyDataPayload, PtyExitPayload } from '../shared
 import type { AppPrefs, UpdateState } from '../shared/app'
 import type { CavemanState, LimitsState } from '../shared/limits'
 import type { RemoteState } from '../shared/remote'
-import type { CcwrapApi, SessionEventPayload } from '../shared/ipc'
+import type { ClaudriftApi, SessionEventPayload } from '../shared/ipc'
 
 function subscribe<T>(channel: string, cb: (p: T) => void): () => void {
   const h = (_: unknown, p: T): void => cb(p)
@@ -12,7 +12,7 @@ function subscribe<T>(channel: string, cb: (p: T) => void): () => void {
   return () => ipcRenderer.removeListener(channel, h)
 }
 
-const api: CcwrapApi = {
+const api: ClaudriftApi = {
   session: {
     start: (args) => ipcRenderer.invoke(IpcChannels.sessionStart, args),
     send: (args) => ipcRenderer.invoke(IpcChannels.sessionSend, args),
@@ -113,4 +113,4 @@ const api: CcwrapApi = {
   }
 }
 
-contextBridge.exposeInMainWorld('ccwrap', api)
+contextBridge.exposeInMainWorld('claudrift', api)

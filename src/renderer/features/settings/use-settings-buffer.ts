@@ -39,7 +39,7 @@ export interface SettingsBuffer {
 export function useSettingsBuffer(ref: ConfigFileRef): SettingsBuffer {
   const qc = useQueryClient()
   const key = configKeys.file(ref)
-  const q = useQuery({ queryKey: key, queryFn: () => window.ccwrap.config.read(ref) })
+  const q = useQuery({ queryKey: key, queryFn: () => window.claudrift.config.read(ref) })
   const snapshot = q.data
 
   const [base, setBase] = useState<ConfigSnapshot | undefined>(undefined)
@@ -74,7 +74,7 @@ export function useSettingsBuffer(ref: ConfigFileRef): SettingsBuffer {
     async (baseHash: string | null) => {
       setSaving(true)
       try {
-        const res = await window.ccwrap.config.write({ ref, text: textRef.current, baseHash })
+        const res = await window.claudrift.config.write({ ref, text: textRef.current, baseHash })
         if (res.ok) {
           qc.setQueryData(key, res.snapshot)
           adopt(res.snapshot)

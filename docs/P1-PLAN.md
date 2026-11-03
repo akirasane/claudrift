@@ -10,7 +10,7 @@ Out of P1 (deferred on purpose): command palette, inspector panel, terminal, set
 ## 1. Decisions
 
 ### D1. Claude binary: user's installed `claude`, bundled fallback, with a version check
-Keep the `resolveClaudeExecutable()` order (`CCWRAP_CLAUDE_PATH` > `where.exe claude` (.exe only) > `~/.local/bin/claude.exe`). Add one rule: run `<path> --version` once at startup (execFile, 5s timeout, cached). If the version is older than the SDK's bundled CLI (`node_modules/@anthropic-ai/claude-agent-sdk/manifest.json` `version`, currently 2.1.312), use the bundled binary instead and log why. The env override always wins.
+Keep the `resolveClaudeExecutable()` order (`CLAUDRIFT_CLAUDE_PATH` > `where.exe claude` (.exe only) > `~/.local/bin/claude.exe`). Add one rule: run `<path> --version` once at startup (execFile, 5s timeout, cached). If the version is older than the SDK's bundled CLI (`node_modules/@anthropic-ai/claude-agent-sdk/manifest.json` `version`, currently 2.1.312), use the bundled binary instead and log why. The env override always wins.
 Why: the user's binary picks up their auto-updates, and P4 packaging gets easier because we don't have to spawn from inside an asar. An older user binary can lack control-protocol features the 0.3.312 SDK sends, so it falls back. Today both report 2.1.312. Main exposes `{path, version, source: 'env'|'user'|'bundled'}` through `app:info` for the status bar and error messages.
 
 ### D2. Keep TypeScript 7.0.2 + Vite 8.3.5. Do not pin back.
@@ -56,8 +56,8 @@ P1 has no feature that needs a DB. The project list comes from session history, 
 SDK 0.3.312 exports `listSessions({dir?, limit, offset})`, `getSessionInfo`, `getSessionMessages(sessionId, {dir?})`, `renameSession`, `deleteSession`, `forkSession`. I ran them read-only against the real `~/.claude/projects`: 56 sessions listed in 61 ms, a 42-message transcript loaded in 11 ms. `SDKSessionInfo` has `summary`, `customTitle`, `firstPrompt`, `lastModified`, `createdAt`, `cwd`, `gitBranch`, `fileSize`. `SessionMessage.message` is Messages-API shaped (text / thinking / tool_use / tool_result), so it maps with the same logic as live messages. This is the "adapter over an unstable format" that SPEC section 9 asks for, maintained upstream.
 **SPEC deviation:** SDK imports are allowed in **two** boundary files, `src/main/services/sdk-adapter.ts` (live) and `src/main/services/sdk-history.ts` (history). SDK types still never leave them.
 Things to handle:
-- cwd casing differs between sessions of one project (`D:\Development_Projects\ccwrap` vs `d:\...`, both present today). Group by a normalized key (Windows: lowercase drive letter, backslashes, no trailing separator, case-insensitive) and display the most recent original spelling.
-- `listSessions({dir:'D:/Development_Projects/ccwrap'})` returned results; the backslash probe was inconclusive (shell quoting artifact). WP2 tests both forms, uses whichever works, and normalizes in `paths.ts`.
+- cwd casing differs between sessions of one project (`D:\Development_Projects\claudrift` vs `d:\...`, both present today). Group by a normalized key (Windows: lowercase drive letter, backslashes, no trailing separator, case-insensitive) and display the most recent original spelling.
+- `listSessions({dir:'D:/Development_Projects/claudrift'})` returned results; the backslash probe was inconclusive (shell quoting artifact). WP2 tests both forms, uses whichever works, and normalizes in `paths.ts`.
 - Transcripts include meta user turns (system reminders, `<command-name>` / `<local-command-stdout>` wrappers). Map them tolerantly: skip, or show a compact "command" line. Never crash on unknown blocks.
 - Cost on resume: `total_cost_usd` is cumulative per `query()`, and a resumed query *continues from the transcript's saved total*. The cost meter shows the **latest** `result.costUsd`. Never sum results.
 
@@ -100,7 +100,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4 in parallel -> **W2** WP5, 
    - `permission_request` adds `ruleLabel?: string`
    - `result` adds `contextWindow?: number`
    - export `ProjectInfo { key; cwd; exists; sessionCount; lastModified }`, `HistorySessionInfo { sessionId; title; firstPrompt?; cwd; gitBranch?; lastModified; createdAt?; fileSize? }`, `AppInfo { claudePath?; claudeVersion?; claudeSource: 'env'|'user'|'bundled'; sdkVersion; platform }`
-4. `channels.ts` + `ipc.ts`: `history:listProjects`, `history:list {cwd}`, `history:load {sessionId, cwd?}` -> `SessionEvent[]`, `app:info`. Add Zod schemas, extend `CcwrapApi` (`history.*`, `app.info()`), wire in `src/preload/index.ts`. `permissionReply` already carries `remember`.
+4. `channels.ts` + `ipc.ts`: `history:listProjects`, `history:list {cwd}`, `history:load {sessionId, cwd?}` -> `SessionEvent[]`, `app:info`. Add Zod schemas, extend `ClaudriftApi` (`history.*`, `app.info()`), wire in `src/preload/index.ts`. `permissionReply` already carries `remember`.
 5. Move the IPC handlers from `src/main/index.ts` into `src/main/ipc/session.ts` (verbatim). Add `src/main/ipc/index.ts#registerIpc(deps)`, stub `ipc/history.ts` (empty results) and stub `ipc/app.ts` (minimal AppInfo), so the renderer works before WP1/WP2 merge.
 6. `paths.ts`: add `normalizeCwdKey(p)` (resolve, strip trailing separator; on Windows lowercase the whole key for comparison).
 7. Renderer skeleton: `App.tsx` becomes a hash router (`#/design` -> `DesignPage`, `#/debug` -> `RawLogPage`, default -> `AppShell`). Move the P0 raw-log App to `features/debug/RawLogPage.tsx`; it keeps `stores/session-store.ts` as a dev tool. Placeholders with **frozen props**:
@@ -160,7 +160,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4 in parallel -> **W2** WP5, 
    - `submit(convId, text)`: adds the user item optimistically, then `session.send` if bound, otherwise `session.start({cwd, prompt, resumeId})` and bind
    - `interrupt(convId)`, `replyPermission(convId, reqId, decision, remember)`, `setPermissionMode`
    - coalesce deltas so the store updates at most once per animation frame (60fps bar)
-4. `ipc-bridge.ts`: subscribes to `window.ccwrap.session.onEvent` once and routes to `applyEvent`.
+4. `ipc-bridge.ts`: subscribes to `window.claudrift.session.onEvent` once and routes to `applyEvent`.
 5. Event-sequence fixtures (`tests/fixtures/events/*.json`): text turn, tool turn with Edit, permission flow, interrupted turn, double init, history replay. WP5, WP6 and WP8 reuse them.
 **Accept:** reducer tests for every rule, including "two inits -> no init items, latest meta", "deltas then assistant_message -> one text part", "resumed result cost not summed", "interrupted result -> status idle".
 
@@ -204,7 +204,7 @@ Waves: **W0** WP0 alone -> **W1** WP1, WP2, WP3, WP4 in parallel -> **W2** WP5, 
    - Selecting a session calls `history:load`, then `seedFromHistory`, and shows it in `ChatView` with `resumeSessionId` set. The first send resumes.
    - Refetch on window focus and after each `result`.
 4. `StatusBar`: model, mode, ctx % (`(input + cacheRead + cacheCreation) / contextWindow` from `lastResult`, hidden when unknown), `CostMeter` (latest `costUsd`, tick-up of at most 600ms, tabular numbers), cwd, and claude source/version from `app:info`.
-**Accept:** component tests with a mocked `window.ccwrap`: the picker lists projects; a missing project is disabled; selecting a session calls `history:load` and renders ChatView with `resumeSessionId`; the cost meter shows the latest value, not a sum. Works against the WP0 stubs if WP2 hasn't merged yet.
+**Accept:** component tests with a mocked `window.claudrift`: the picker lists projects; a missing project is disabled; selecting a session calls `history:load` and renders ChatView with `resumeSessionId`; the cost meter shows the latest value, not a sum. Works against the WP0 stubs if WP2 hasn't merged yet.
 
 ### WP8. `/design` page
 **Owns:** `src/renderer/app/design/**`.

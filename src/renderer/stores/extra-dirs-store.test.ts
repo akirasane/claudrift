@@ -12,7 +12,7 @@ describe('extra dirs store', () => {
     expect(useExtraDirs.getState().add('C:\\proj', 'D:\\shared\\lib')).toEqual({ ok: true })
     expect(useExtraDirs.getState().dirsFor('c:/PROJ/')).toEqual(['D:\\shared\\lib'])
     expect(useExtraDirs.getState().dirsFor('C:\\other')).toEqual([])
-    const stored = JSON.parse(window.localStorage.getItem('ccwrap.extraDirs.v1')!)
+    const stored = JSON.parse(window.localStorage.getItem('claudrift.extraDirs.v1')!)
     expect(stored[dirKey('C:\\proj')]).toEqual(['D:\\shared\\lib'])
   })
 
@@ -29,6 +29,6 @@ describe('extra dirs store', () => {
     useExtraDirs.getState().add('C:\\proj', 'D:\\a')
     useExtraDirs.getState().remove('C:\\proj', 'd:/a')
     expect(useExtraDirs.getState().dirsFor('C:\\proj')).toEqual([])
-    expect(JSON.parse(window.localStorage.getItem('ccwrap.extraDirs.v1')!)).toEqual({})
+    expect(JSON.parse(window.localStorage.getItem('claudrift.extraDirs.v1')!)).toEqual({})
   })
 })

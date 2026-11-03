@@ -8,7 +8,7 @@ export const usageKeys = {
 export const totalTokens = (t: UsageTokens): number => t.input + t.output + t.cacheRead + t.cacheCreation
 
 function fetchSummary(q: UsageQuery): Promise<UsageSummary> {
-  return window.ccwrap.usage.summary(q)
+  return window.claudrift.usage.summary(q)
 }
 
 export function useUsageSummary(days: UsageRangeDays, cwd: string | undefined) {

@@ -25,7 +25,7 @@ describe('rankFiles', () => {
 describe('FileSearchService', () => {
   const dirs: string[] = []
   const tmp = (): string => {
-    const d = mkdtempSync(join(tmpdir(), 'ccwrap-fs-'))
+    const d = mkdtempSync(join(tmpdir(), 'claudrift-fs-'))
     dirs.push(d)
     return d
   }
@@ -36,7 +36,7 @@ describe('FileSearchService', () => {
 
   it('returns [] for a missing directory', async () => {
     const s = new FileSearchService(async () => FILES)
-    expect(await s.search({ cwd: join(tmpdir(), 'nope-ccwrap-xyz'), query: '', limit: 5 })).toEqual([])
+    expect(await s.search({ cwd: join(tmpdir(), 'nope-claudrift-xyz'), query: '', limit: 5 })).toEqual([])
   })
 
   it('caches the listing per cwd until the TTL expires', async () => {
@@ -82,10 +82,10 @@ describe('rankFiles noise', () => {
 
 describe('FileSearchService extra dirs', () => {
   it('returns project files relative and extra-folder files absolute', async () => {
-    const proj = mkdtempSync(join(tmpdir(), 'ccwrap-p-'))
-    const extra = mkdtempSync(join(tmpdir(), 'ccwrap-x-'))
+    const proj = mkdtempSync(join(tmpdir(), 'claudrift-p-'))
+    const extra = mkdtempSync(join(tmpdir(), 'claudrift-x-'))
     try {
-      const s = new FileSearchService(async (d) => (d.includes('ccwrap-x-') ? ['lib/shared.ts'] : ['src/app.ts']))
+      const s = new FileSearchService(async (d) => (d.includes('claudrift-x-') ? ['lib/shared.ts'] : ['src/app.ts']))
       const r = await s.search({ cwd: proj, dirs: [extra], query: '', limit: 10 })
       const base = extra.split(String.fromCharCode(92)).join('/')
       expect(r).toContain('src/app.ts')

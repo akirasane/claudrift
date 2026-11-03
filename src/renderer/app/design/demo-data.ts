@@ -35,7 +35,7 @@ export const toolEvents: SessionEvent[] = [
   bash('err', 'node scripts/missing.js'),
   { t: 'tool_result', toolUseId: 'err', content: "Error: Cannot find module 'scripts/missing.js'\n    at Module._resolveFilename", isError: true },
   { t: 'tool_use', toolUseId: 'read', name: 'Read', input: { file_path: 'src/renderer/styles/tokens.css', offset: 1, limit: 40 } },
-  { t: 'tool_result', toolUseId: 'read', content: '/* ccwraper design tokens */\n:root {\n  color-scheme: dark;\n}', isError: false },
+  { t: 'tool_result', toolUseId: 'read', content: '/* Claudrift design tokens */\n:root {\n  color-scheme: dark;\n}', isError: false },
   { t: 'tool_use', toolUseId: 'grep', name: 'Grep', input: { pattern: 'ccw-composer' } },
   { t: 'tool_result', toolUseId: 'grep', content: 'chat.css:12\nComposer.tsx:84', isError: false },
   { t: 'tool_use', toolUseId: 'generic', name: 'WebSearch', input: { query: 'WCAG contrast ratio formula' } },
@@ -128,11 +128,11 @@ export const THINKING_SAMPLE =
 
 /** While the demo permission dialog is open, permissionReply is a no-op. Returns the restore function. */
 export function installIpcShim(): () => void {
-  const w = window as unknown as { ccwrap?: { session?: Record<string, unknown> } }
-  const prev = w.ccwrap
-  w.ccwrap = { ...prev, session: { ...prev?.session, permissionReply: async () => undefined } }
+  const w = window as unknown as { claudrift?: { session?: Record<string, unknown> } }
+  const prev = w.claudrift
+  w.claudrift = { ...prev, session: { ...prev?.session, permissionReply: async () => undefined } }
   return () => {
-    if (prev === undefined) delete w.ccwrap
-    else w.ccwrap = prev
+    if (prev === undefined) delete w.claudrift
+    else w.claudrift = prev
   }
 }

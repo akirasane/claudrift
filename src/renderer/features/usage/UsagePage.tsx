@@ -109,7 +109,7 @@ export function UsagePage({ cwd }: { cwd?: string | undefined }): React.JSX.Elem
         <footer className="mt-auto flex flex-col gap-1 border-t border-border pt-3 text-sm text-fg-3">
           <p>
             Tokens cover all Claude Code sessions on this machine. Dollar figures are an estimated API-equivalent value,
-            not a bill, and are exact only for sessions run inside ccwraper
+            not a bill, and are exact only for sessions run inside Claudrift
             {summary.cost.since ? ` (since ${summary.cost.since})` : ''}; earlier history is shown in tokens only.
           </p>
           <p data-testid="scan-footer" className="tabular-nums">

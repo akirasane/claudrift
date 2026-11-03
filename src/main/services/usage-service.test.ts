@@ -16,7 +16,7 @@ afterEach(() => {
 })
 
 function setup() {
-  const base = mkdtempSync(join(tmpdir(), 'ccwrap-usvc-'))
+  const base = mkdtempSync(join(tmpdir(), 'claudrift-usvc-'))
   dirs.push(base)
   const root = join(base, 'projects')
   mkdirSync(join(root, 'p1'), { recursive: true })

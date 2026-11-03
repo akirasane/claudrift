@@ -47,7 +47,7 @@ export function TerminalPanel({ cwd, onClose }: { cwd?: string; onClose: () => v
 
   // Shell list (once). Run-in-terminal waits on the same promise.
   useEffect(() => {
-    const p = Promise.resolve(window.ccwrap.pty?.listShells?.() ?? []).catch(() => [] as ShellProfile[])
+    const p = Promise.resolve(window.claudrift.pty?.listShells?.() ?? []).catch(() => [] as ShellProfile[])
     shellsRef.current = p
     let live = true
     void p.then((list) => {

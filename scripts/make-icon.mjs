@@ -1,26 +1,16 @@
-// Renders build/icon.png (1024 px) under Electron: `npm run icon` (= electron scripts/make-icon.mjs).
-// electron-builder converts the PNG to .ico. No image dependency needed.
+// Renders build/icon.svg to build/icon.png (1024 px), build/icon.ico and docs/assets/logo-{512,256}.png under Electron: `npm run icon` (= electron scripts/make-icon.mjs).
+// No image dependency needed.
 import { createRequire } from 'node:module'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const { app, BrowserWindow } = createRequire(import.meta.url)('electron')
-const out = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'build', 'icon.png')
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const out = resolve(root, 'build', 'icon.png')
 const SIZE = 1024
 
-const svg = `<svg style="display:block" xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 1024 1024">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#e8946b"/>
-      <stop offset="1" stop-color="#c4562f"/>
-    </linearGradient>
-  </defs>
-  <rect x="64" y="64" width="896" height="896" rx="200" fill="#1b1a19"/>
-  <rect x="64" y="64" width="896" height="896" rx="200" fill="none" stroke="#3a3836" stroke-width="8"/>
-  <path d="M300 330 L520 512 L300 694" fill="none" stroke="url(#g)" stroke-width="96" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="580" y="640" width="168" height="96" rx="48" fill="url(#g)"/>
-</svg>`
+const svg = readFileSync(resolve(root, 'build', 'icon.svg'), 'utf8').replace('<svg ', '<svg style="display:block" ')
 
 // Hard stop so a stuck capture can never leave an Electron process behind.
 setTimeout(() => {
@@ -46,6 +36,27 @@ async function main() {
   const img = await win.webContents.capturePage({ x: 0, y: 0, width: SIZE, height: SIZE })
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, img.toPNG())
+  const assets = resolve(root, 'docs', 'assets')
+  mkdirSync(assets, { recursive: true })
+  for (const n of [512, 256]) writeFileSync(resolve(assets, 'logo-' + n + '.png'), img.resize({ width: n, height: n, quality: 'best' }).toPNG())
+  // ICO with embedded PNG frames (Vista+).
+  const sizes = [16, 24, 32, 48, 64, 128, 256]
+  const frames = sizes.map((n) => img.resize({ width: n, height: n, quality: 'best' }).toPNG())
+  const head = Buffer.alloc(6 + 16 * sizes.length)
+  head.writeUInt16LE(1, 2)
+  head.writeUInt16LE(sizes.length, 4)
+  let off = head.length
+  sizes.forEach((n, i) => {
+    const e = 6 + 16 * i
+    head[e] = n === 256 ? 0 : n
+    head[e + 1] = n === 256 ? 0 : n
+    head.writeUInt16LE(1, e + 4)
+    head.writeUInt16LE(32, e + 6)
+    head.writeUInt32LE(frames[i].length, e + 8)
+    head.writeUInt32LE(off, e + 12)
+    off += frames[i].length
+  })
+  writeFileSync(resolve(root, 'build', 'icon.ico'), Buffer.concat([head, ...frames]))
   console.error('wrote', out, JSON.stringify(img.getSize()))
   app.exit(0)
 }

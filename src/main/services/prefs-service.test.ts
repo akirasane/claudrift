@@ -8,7 +8,7 @@ import { PrefsService } from './prefs-service'
 let dir: string
 let file: string
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'ccwrap-prefs-'))
+  dir = await mkdtemp(join(tmpdir(), 'claudrift-prefs-'))
   file = join(dir, 'prefs.json')
 })
 afterEach(async () => {

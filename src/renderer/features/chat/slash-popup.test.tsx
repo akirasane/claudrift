@@ -49,7 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   window.localStorage.clear()
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {}, draftModels: {}, drafts: {}, draftImages: {} })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
 })
 
 const box = (): HTMLTextAreaElement => screen.getByLabelText('Message') as HTMLTextAreaElement

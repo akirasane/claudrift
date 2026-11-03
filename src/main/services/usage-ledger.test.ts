@@ -10,7 +10,7 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
 const tmp = (): string => {
-  const d = mkdtempSync(join(tmpdir(), 'ccwrap-ledger-'))
+  const d = mkdtempSync(join(tmpdir(), 'claudrift-ledger-'))
   dirs.push(d)
   return d
 }

@@ -24,7 +24,7 @@ const upTo = (events: SessionEvent[], t: SessionEvent['t']): SessionEvent[] =>
 beforeEach(() => {
   resetToolCardPrefsForTest(true) // most tests look inside the body
   permissionReply.mockClear()
-  ;(globalThis as unknown as { window: { ccwrap: unknown } }).window.ccwrap = { session: { permissionReply } }
+  ;(globalThis as unknown as { window: { claudrift: unknown } }).window.claudrift = { session: { permissionReply } }
 })
 
 describe('ToolCard', () => {

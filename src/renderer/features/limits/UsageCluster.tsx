@@ -12,7 +12,7 @@ import { useCavemanState, useLimitsState } from './use-limits-state'
 function useShellPrefs(): Pick<AppPrefs, 'showLimitsBar' | 'showCavemanBadge'> {
   const q = useQuery<AppPrefs>({
     queryKey: ['prefs'],
-    queryFn: () => window.ccwrap.prefs.get(),
+    queryFn: () => window.claudrift.prefs.get(),
     retry: false,
     staleTime: Infinity
   })
@@ -142,7 +142,7 @@ export function CavemanBadge(): React.JSX.Element | null {
     <Tooltip
       content={
         <span data-testid="caveman-tip">
-          Caveman token-saving mode ({st.mode}). Read from the caveman plugin&apos;s status files in your Claude config folder; ccwraper
+          Caveman token-saving mode ({st.mode}). Read from the caveman plugin&apos;s status files in your Claude config folder; Claudrift
           never writes them.
         </span>
       }

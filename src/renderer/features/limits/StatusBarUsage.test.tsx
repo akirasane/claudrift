@@ -21,7 +21,7 @@ function mount(opts: { limits?: LimitEntry[]; caveman?: CavemanState; prefs?: Pa
   limitsPush = undefined
   cavemanPush = undefined
   const prefs: AppPrefs = { ...structuredClone(DEFAULT_PREFS), ...opts.prefs }
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     app: { info: vi.fn(async () => ({ claudeVersion: '2.1.0', claudeSource: 'user' })) },
     prefs: { get: vi.fn(async () => prefs), onChanged: vi.fn(() => () => {}) },
     limits: {

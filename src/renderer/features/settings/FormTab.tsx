@@ -12,7 +12,7 @@ const FALLBACK_MODELS: ModelOption[] = ['default', 'sonnet', 'opus', 'haiku'].ma
 
 export function loadCachedModels(): ModelOption[] {
   try {
-    const raw = window.localStorage.getItem('ccwrap.models')
+    const raw = window.localStorage.getItem('claudrift.models')
     if (raw) {
       const v: unknown = JSON.parse(raw)
       if (Array.isArray(v)) {

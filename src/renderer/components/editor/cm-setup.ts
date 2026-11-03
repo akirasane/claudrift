@@ -11,7 +11,7 @@ import {
   keymap,
   lineNumbers
 } from '@codemirror/view'
-import { ccwrapTheme } from './cm-theme'
+import { claudriftTheme } from './cm-theme'
 
 export type EditorLanguage = 'json' | 'markdown'
 
@@ -39,7 +39,7 @@ export function languageExtensions(
     return getExternal().map((d) => {
       const from = Math.max(0, Math.min(d.from, len))
       const to = Math.max(from, Math.min(d.to, len))
-      return { from, to, message: d.message, severity: d.severity, source: 'ccwrap' }
+      return { from, to, message: d.message, severity: d.severity, source: 'claudrift' }
     })
   }
   const lint = [linter(external, { delay: 250 }), lintGutter()]
@@ -94,6 +94,6 @@ export function baseExtensions({ ariaLabel, onSave }: BaseSetupOptions): Extensi
       ...defaultKeymap
     ]),
     EditorView.contentAttributes.of({ 'aria-label': ariaLabel, 'aria-multiline': 'true' }),
-    ccwrapTheme
+    claudriftTheme
   ]
 }

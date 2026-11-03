@@ -55,7 +55,7 @@ function makeApi(list: McpListResult = { servers }) {
 }
 
 function mount(cwd: string | undefined = CWD) {
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
   return render(
     <QueryClientProvider client={createQueryClient()}>
       <McpPage cwd={cwd} />

@@ -47,7 +47,7 @@ SPIKE_SKIP_123=1 npm run spike   # only permission + interrupt tests (cheaper)
 
 ## Windows binary resolution
 - SDK has the bundled `claude.exe` in `node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/` (works without any path option).
-- `src/main/paths.ts: resolveClaudeExecutable()` prefers `CCWRAP_CLAUDE_PATH`, then `where.exe claude` (real `.exe` only; `.cmd` shims rejected), then `~/.local/bin/claude.exe`; falls back to SDK bundled. Resolved to `C:\Users\chatkawin.t\.local\bin\claude.exe` (v2.1.312) here and ran fine.
+- `src/main/paths.ts: resolveClaudeExecutable()` prefers `CLAUDRIFT_CLAUDE_PATH`, then `where.exe claude` (real `.exe` only; `.cmd` shims rejected), then `~/.local/bin/claude.exe`; falls back to SDK bundled. Resolved to `C:\Users\chatkawin.t\.local\bin\claude.exe` (v2.1.312) here and ran fine.
 - Packaging (P4): bundled exe cannot be spawned from inside an asar; need `asarUnpack` for the platform package or always use the user's installed claude.
 
 ## Deviations from SPEC

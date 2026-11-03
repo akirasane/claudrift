@@ -48,7 +48,7 @@ export function keysForChange(p: FsChangedPayload): Array<readonly unknown[]> {
 export function useFsChangedInvalidation(): void {
   const qc = useQueryClient()
   useEffect(() => {
-    const cfg = window.ccwrap?.config
+    const cfg = window.claudrift?.config
     if (!cfg?.onChanged) return
     return cfg.onChanged((p) => {
       for (const queryKey of keysForChange(p)) void qc.invalidateQueries({ queryKey })

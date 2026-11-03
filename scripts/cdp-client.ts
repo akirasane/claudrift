@@ -14,7 +14,7 @@ export interface LaunchOptions {
   env?: Record<string, string>
   /** Extra Electron command-line args (e.g. --inspect=9230 to reach the main process). */
   extraArgs?: string[]
-  /** Launch a packaged exe instead of electron + the repo (also CCWRAP_SMOKE_EXE). */
+  /** Launch a packaged exe instead of electron + the repo (also CLAUDRIFT_SMOKE_EXE). */
   exe?: string
 }
 
@@ -27,8 +27,8 @@ export interface Launched {
 }
 
 export function launchApp(opts: LaunchOptions): Launched {
-  const exe = opts.exe ?? process.env['CCWRAP_SMOKE_EXE'] ?? join(repoRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
-  const packaged = !!(opts.exe ?? process.env['CCWRAP_SMOKE_EXE'])
+  const exe = opts.exe ?? process.env['CLAUDRIFT_SMOKE_EXE'] ?? join(repoRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
+  const packaged = !!(opts.exe ?? process.env['CLAUDRIFT_SMOKE_EXE'])
   const env: NodeJS.ProcessEnv = { ...process.env, ...opts.env }
   delete env['ELECTRON_RUN_AS_NODE']
   const child = spawn(exe, [...(packaged ? [] : [repoRoot]), `--remote-debugging-port=${opts.port}`, `--user-data-dir=${opts.userDataDir}`, ...(opts.extraArgs ?? [])], {

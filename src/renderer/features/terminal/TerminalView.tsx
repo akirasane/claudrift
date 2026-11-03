@@ -71,14 +71,14 @@ export const TerminalView = forwardRef<TerminalHandle, TerminalViewProps>(functi
     const { cols, rows } = term
     if (cols === lastSizeRef.current.cols && rows === lastSizeRef.current.rows) return
     lastSizeRef.current = { cols, rows }
-    if (ptyIdRef.current && !closedRef.current) window.ccwrap.pty.resize(ptyIdRef.current, cols, rows)
+    if (ptyIdRef.current && !closedRef.current) window.claudrift.pty.resize(ptyIdRef.current, cols, rows)
   }, [])
 
   const killPty = useCallback(() => {
     if (closedRef.current) return
     closedRef.current = true
     const id = ptyIdRef.current
-    if (id) void Promise.resolve(window.ccwrap.pty.close(id)).catch(() => {})
+    if (id) void Promise.resolve(window.claudrift.pty.close(id)).catch(() => {})
   }, [])
 
   useImperativeHandle(
@@ -214,11 +214,11 @@ export const TerminalView = forwardRef<TerminalHandle, TerminalViewProps>(functi
         if (raf) cancelAnimationFrame(raf)
       })
 
-      const offData = window.ccwrap.pty.onData((p) => {
+      const offData = window.claudrift.pty.onData((p) => {
         if (myId === undefined) early.push(p)
         else if (p.ptyId === myId) push(p.data)
       })
-      const offExit = window.ccwrap.pty.onExit((p) => {
+      const offExit = window.claudrift.pty.onExit((p) => {
         if (p.ptyId !== ptyIdRef.current) return
         flush()
         closedRef.current = true
@@ -228,14 +228,14 @@ export const TerminalView = forwardRef<TerminalHandle, TerminalViewProps>(functi
       disposers.push(offData, offExit)
 
       const input = term.onData((d) => {
-        if (ptyIdRef.current && !closedRef.current) window.ccwrap.pty.write(ptyIdRef.current, d)
+        if (ptyIdRef.current && !closedRef.current) window.claudrift.pty.write(ptyIdRef.current, d)
       })
       disposers.push(() => input.dispose())
 
       try {
-        const res = await window.ccwrap.pty.open({ shellId: tab.shellId, cwd: tab.cwd, cols, rows })
+        const res = await window.claudrift.pty.open({ shellId: tab.shellId, cwd: tab.cwd, cols, rows })
         if (cancelled) {
-          void Promise.resolve(window.ccwrap.pty.close(res.ptyId)).catch(() => {})
+          void Promise.resolve(window.claudrift.pty.close(res.ptyId)).catch(() => {})
           return
         }
         myId = res.ptyId
@@ -304,7 +304,7 @@ export const TerminalView = forwardRef<TerminalHandle, TerminalViewProps>(functi
     if (!text || !tab.ptyId || closedRef.current) return
     const trimmed = text.replace(/[\r\n]+$/, '')
     if (/[\r\n]/.test(trimmed)) termRef.current?.paste(trimmed) // bracketed paste where supported
-    else window.ccwrap.pty.write(tab.ptyId, trimmed)
+    else window.claudrift.pty.write(tab.ptyId, trimmed)
     useTerminalStore.getState().consumeInput(tab.id)
     termRef.current?.focus()
   }, [tab.pendingInput, tab.ptyId, tab.id])

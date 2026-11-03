@@ -40,7 +40,7 @@ beforeEach(() => {
   write.mockReset()
   files = {}
   read.mockImplementation(async (ref: ConfigFileRef) => files[ref.scope] ?? snap(ref, null, null))
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = { config: { read, write } }
+  ;(window as unknown as { claudrift: unknown }).claudrift = { config: { read, write } }
 })
 
 describe('MemoryPage', () => {

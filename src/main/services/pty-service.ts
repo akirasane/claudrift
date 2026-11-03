@@ -96,7 +96,7 @@ export function buildPtyEnv(src: Record<string, string | undefined>): Record<str
     if (v === undefined || STRIP_ENV.has(k.toUpperCase())) continue
     env[k] = v
   }
-  env.TERM_PROGRAM = 'ccwraper'
+  env.TERM_PROGRAM = 'Claudrift'
   env.COLORTERM = 'truecolor'
   return env
 }

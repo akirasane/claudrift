@@ -1,7 +1,7 @@
-import type { CcwrapApi } from '../shared/ipc'
+import type { ClaudriftApi } from '../shared/ipc'
 declare global {
   interface Window {
-    ccwrap: CcwrapApi
+    claudrift: ClaudriftApi
   }
 }
 export {}

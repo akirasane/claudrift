@@ -2,7 +2,7 @@
 
 Date: 2026-10-30. Electron 45.1.0, SDK 0.3.312, claude.exe 2.1.312 (user install), model claude-sonnet-5-5 (no model picker in P1, the default is used).
 
-Method: the built app (`npm run build`, `npx electron . --remote-debugging-port=9222`) was driven and screenshotted over CDP with throwaway Node scripts (mouse and key events, `Input.insertText`, `Page.captureScreenshot`, event taps through `window.ccwrap.session.onEvent`). Scratch project `D:\claude-tmp\p1-live`, settingSources as the app has them (`user`, `project`, `local`). Screenshots are in `D:\claude-tmp\p1-shots` (not committed). Native OS dialogs cannot be driven over CDP, so "Open folder..." was not exercised; the project was selected through the persisted `ccwrap.lastCwd` key.
+Method: the built app (`npm run build`, `npx electron . --remote-debugging-port=9222`) was driven and screenshotted over CDP with throwaway Node scripts (mouse and key events, `Input.insertText`, `Page.captureScreenshot`, event taps through `window.claudrift.session.onEvent`). Scratch project `D:\claude-tmp\p1-live`, settingSources as the app has them (`user`, `project`, `local`). Screenshots are in `D:\claude-tmp\p1-shots` (not committed). Native OS dialogs cannot be driven over CDP, so "Open folder..." was not exercised; the project was selected through the persisted `claudrift.lastCwd` key.
 
 ## Gates
 `npm run typecheck`, `npm test` (149 tests) and `npm run build` are green at the final commit.

@@ -79,7 +79,7 @@ describe('SessionManager bypass gate', () => {
   })
 
   it('rejects Bypass while the preference is off and passes allowBypass when on', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-bypass-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-bypass-'))
     try {
       let allow = false
       const start = vi.fn(async (_o: unknown) => fakeAdapter())
@@ -102,7 +102,7 @@ describe('SessionManager bypass gate', () => {
 
 describe('allowBypassMode preference', () => {
   it('an old prefs.json without the key loads with the default (false)', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-prefs-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-prefs-'))
     try {
       const file = join(dir, 'prefs.json')
       writeFileSync(file, JSON.stringify({ version: 1, confirmQuitWhileRunning: false }))
@@ -116,7 +116,7 @@ describe('allowBypassMode preference', () => {
   })
 
   it('can be turned on, persists and reads back', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-prefs-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-prefs-'))
     try {
       const file = join(dir, 'prefs.json')
       const p = new PrefsService(file)

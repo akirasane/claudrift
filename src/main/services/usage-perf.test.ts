@@ -1,4 +1,4 @@
-// Opt-in perf gate (D5): CCWRAP_PERF=1 npx vitest run --project node usage-perf. Synthetic data only.
+// Opt-in perf gate (D5): CLAUDRIFT_PERF=1 npx vitest run --project node usage-perf. Synthetic data only.
 import { monitorEventLoopDelay } from 'node:perf_hooks'
 import { createWriteStream, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { once } from 'node:events'
@@ -7,11 +7,11 @@ import { describe, expect, it } from 'vitest'
 import { UsageService } from './usage-service'
 import { aLine } from './usage-test-util'
 
-const run = process.env['CCWRAP_PERF'] === '1' ? describe : describe.skip
+const run = process.env['CLAUDRIFT_PERF'] === '1' ? describe : describe.skip
 
 run('usage perf gate', () => {
   it('64 MB cold < 4 s, p99 loop delay < 50 ms, 500 cached files < 300 ms', async () => {
-    const base = 'D:\\claude-tmp\\ccwrap-usage-perf'
+    const base = 'D:\\claude-tmp\\claudrift-usage-perf'
     rmSync(base, { recursive: true, force: true })
     const root = join(base, 'projects')
     mkdirSync(join(root, 'big'), { recursive: true })
@@ -61,14 +61,14 @@ run('usage perf gate', () => {
 })
 
 // Read-only, counts-only probe of the real projects dir (never prints paths or content).
-const probe = process.env['CCWRAP_PROBE'] === '1' ? describe : describe.skip
+const probe = process.env['CLAUDRIFT_PROBE'] === '1' ? describe : describe.skip
 probe('usage real-data probe', () => {
   it('prints aggregate numbers only', async () => {
     const { homedir } = await import('node:os')
-    const base = 'D:\claude-tmp\ccwrap-usage-probe'
+    const base = 'D:\claude-tmp\claudrift-usage-probe'
     mkdirSync(base, { recursive: true })
     const svc = new UsageService({
-      root: join(process.env['CCWRAP_TEST_REAL_HOME'] ?? homedir(), '.claude', 'projects'),
+      root: join(process.env['CLAUDRIFT_TEST_REAL_HOME'] ?? homedir(), '.claude', 'projects'),
       cacheFile: join(base, 'cache.json'),
       ledgerFile: join(base, 'l.jsonl'),
       log: () => {}

@@ -134,7 +134,7 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
     if (!mentionKey || !mention || !cwd) return
     let stale = false
     const h = window.setTimeout(() => {
-      window.ccwrap.files
+      window.claudrift.files
         .search({ cwd, ...(extraDirs.length ? { dirs: extraDirs } : {}), query: mention.query, limit: 20 })
         .then((list) => {
           if (!stale) setFiles({ key: mentionKey, list })

@@ -74,7 +74,7 @@ beforeEach(async () => {
   reports = []
   prefs = { ...DEFAULT_PREFS, autoResume: { enabled: true, prompt: '' } }
   api = makeApi()
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = api
+  ;(window as unknown as { claudrift: unknown }).claudrift = api
   window.localStorage.clear()
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {}, drafts: {}, lastActive: {}, draftModels: {} })
   useWorkspaceStore.setState({ tabs: [], unread: {}, activeConvId: undefined, cwd: CWD, view: 'chat' })

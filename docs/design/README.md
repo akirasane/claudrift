@@ -1,4 +1,4 @@
-# ccwraper design (P1 reference)
+# Claudrift design (P1 reference)
 
 Modern premium dark, Linear / Raycast / Arc feel (SPEC section 10, 10.1). Fonts: Geist (UI) and Geist Mono (code, terminal).
 

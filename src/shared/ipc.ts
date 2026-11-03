@@ -406,8 +406,8 @@ export interface SessionEventPayload {
   event: SessionEvent
 }
 
-/** Shape exposed on window.ccwrap by the preload script. */
-export interface CcwrapApi {
+/** Shape exposed on window.claudrift by the preload script. */
+export interface ClaudriftApi {
   session: {
     start(args: SessionStartArgs): Promise<{ localId: string }>
     send(args: SessionSendArgs): Promise<void>

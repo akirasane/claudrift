@@ -4,7 +4,7 @@ import { Button, Chip, Dialog, DialogContent, DialogDescription, DialogFooter, D
 import { isSettingsDirty, subscribeSettingsDirty } from './dirty-guard'
 import { SettingsEditor, type SettingsTab } from './SettingsEditor'
 
-const TAB_KEY = 'ccwrap.settings.tab'
+const TAB_KEY = 'claudrift.settings.tab'
 const SCOPES: Array<{ id: SettingsScope; label: string }> = [
   { id: 'user', label: 'User' },
   { id: 'project', label: 'Project' },

@@ -1,6 +1,6 @@
 {
-  "name": "ccwraper",
-  "productName": "ccwraper",
+  "name": "claudrift",
+  "productName": "Claudrift",
   "version": "0.13.1",
   "private": true,
   "description": "Electron desktop wrapper for Claude Code",

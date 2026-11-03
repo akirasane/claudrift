@@ -12,7 +12,7 @@ export function AddDirButton({ convId, disabled }: { convId: string; disabled?: 
   const live = useChatStore((s) => Boolean(s.convs[convId]?.localId))
   const pick = async (): Promise<void> => {
     if (!cwd) return
-    const dir = await window.ccwrap.dialog.pickDirectory()
+    const dir = await window.claudrift.dialog.pickDirectory()
     if (!dir) return
     const r = useExtraDirs.getState().add(cwd, dir)
     if (!r.ok) {

@@ -50,7 +50,7 @@ export function KpiRow({ summary }: { summary: UsageSummary }): React.JSX.Elemen
           testId="kpi-cost"
           label={COST_LABEL}
           value={formatUsd(totals.costUsd)}
-          sub={`ccwraper sessions only, since ${cost.since}`}
+          sub={`Claudrift sessions only, since ${cost.since}`}
         />
       ) : (
         <Kpi testId="kpi-cost" label={COST_LABEL} value="No in-app sessions yet" />

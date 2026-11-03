@@ -42,8 +42,8 @@ export function useItemCommands(): PaletteCommand[] {
   const results = useQueries({
     queries: KINDS.map((kind) => ({
       queryKey: configKeys.items(kind, cwd),
-      queryFn: () => window.ccwrap.items.list({ kind, ...(cwd ? { cwd } : {}) }),
-      enabled: !!window.ccwrap?.items
+      queryFn: () => window.claudrift.items.list({ kind, ...(cwd ? { cwd } : {}) }),
+      enabled: !!window.claudrift?.items
     }))
   })
   const lists: Partial<Record<ItemKind, ConfigItemList | undefined>> = {}

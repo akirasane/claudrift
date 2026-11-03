@@ -14,11 +14,11 @@ describe('resolveCliBinary', () => {
 })
 
 // Opt-in: runs the real claude binary, fully redirected to a scratch dir. Never touches the real config.
-const IT = process.env['CCWRAP_CLI_IT'] === '1'
-describe.skipIf(!IT)('claude mcp integration (CCWRAP_CLI_IT=1)', () => {
-  const scratchRoot = process.env['CCWRAP_IT_DIR'] ?? tmpdir()
+const IT = process.env['CLAUDRIFT_CLI_IT'] === '1'
+describe.skipIf(!IT)('claude mcp integration (CLAUDRIFT_CLI_IT=1)', () => {
+  const scratchRoot = process.env['CLAUDRIFT_IT_DIR'] ?? tmpdir()
   mkdirSync(scratchRoot, { recursive: true })
-  const root = mkdtempSync(join(scratchRoot, 'ccwrap-mcp-it-'))
+  const root = mkdtempSync(join(scratchRoot, 'claudrift-mcp-it-'))
   const home = join(root, 'home')
   const cfg = join(home, '.claude')
   const proj = join(root, 'proj dir')
@@ -37,7 +37,7 @@ describe.skipIf(!IT)('claude mcp integration (CCWRAP_CLI_IT=1)', () => {
   }
 
   it('is redirected away from the real home', () => {
-    const real = process.env['CCWRAP_TEST_REAL_HOME']
+    const real = process.env['CLAUDRIFT_TEST_REAL_HOME']
     expect(cfg.startsWith(root)).toBe(true)
     expect(paths.globalConfigPath.startsWith(root)).toBe(true)
     if (real) expect(cfg.toLowerCase().startsWith(real.toLowerCase())).toBe(false)
@@ -77,7 +77,7 @@ describe.skipIf(!IT)('claude mcp integration (CCWRAP_CLI_IT=1)', () => {
   })
 
   it('get on a server that cannot start exits 0 with failed status', { timeout: 120_000 }, async () => {
-    await svc.add({ scope: 'user', name: 'it-broken', config: { type: 'stdio', command: 'ccwrap-no-such-binary' } })
+    await svc.add({ scope: 'user', name: 'it-broken', config: { type: 'stdio', command: 'claudrift-no-such-binary' } })
     const r = await svc.test({ name: 'it-broken' })
     expect(r.status).toBe('failed')
     expect((await svc.test({ name: 'it-missing' })).status).toBe('unknown')

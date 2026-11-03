@@ -6,7 +6,7 @@ import { tags as t } from '@lezer/highlight'
 // Only CSS variables from styles/tokens.css. No literal colors here (the no-hex test enforces it).
 const accentSel = 'color-mix(in srgb, var(--accent-from) 25%, transparent)'
 
-export const ccwrapEditorTheme = EditorView.theme(
+export const claudriftEditorTheme = EditorView.theme(
   {
     '&': {
       color: 'var(--text-primary)',
@@ -103,7 +103,7 @@ export const ccwrapEditorTheme = EditorView.theme(
   { dark: true }
 )
 
-export const ccwrapHighlightStyle = HighlightStyle.define([
+export const claudriftHighlightStyle = HighlightStyle.define([
   { tag: [t.propertyName, t.definition(t.propertyName)], color: 'var(--accent-text)' },
   { tag: [t.string, t.special(t.string)], color: 'var(--ok)' },
   { tag: [t.number, t.bool, t.null, t.atom], color: 'var(--warn)' },
@@ -120,4 +120,4 @@ export const ccwrapHighlightStyle = HighlightStyle.define([
   { tag: t.invalid, color: 'var(--danger)' }
 ])
 
-export const ccwrapTheme: Extension = [ccwrapEditorTheme, syntaxHighlighting(ccwrapHighlightStyle)]
+export const claudriftTheme: Extension = [claudriftEditorTheme, syntaxHighlighting(claudriftHighlightStyle)]

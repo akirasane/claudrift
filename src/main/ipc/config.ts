@@ -33,7 +33,7 @@ export function registerConfigIpc(deps: ConfigIpcDeps): Disposer {
   })
   shared = { service, paths }
   const watcher = new ConfigWatcher(paths, service, (p: FsChangedPayload) => deps.send(IpcChannels.fsChanged, p))
-  watcher.start().catch((err) => console.warn('[ccwrap] config watcher failed to start', err instanceof Error ? err.message : err))
+  watcher.start().catch((err) => console.warn('[claudrift] config watcher failed to start', err instanceof Error ? err.message : err))
 
   ipcMain.handle(IpcChannels.configRead, (_e, raw: unknown): Promise<ConfigSnapshot> => {
     const { ref } = ConfigReadSchema.parse(raw)

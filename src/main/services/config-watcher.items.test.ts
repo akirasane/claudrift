@@ -48,7 +48,7 @@ const paths = () => createConfigPaths({ CLAUDE_CONFIG_DIR: join(home, '.claude')
 const items = (kind: string) => events.filter((e) => e.kind === kind)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ccwrap-witems-'))
+  root = await mkdtemp(join(tmpdir(), 'claudrift-witems-'))
   home = join(root, 'home')
   proj = join(root, 'proj')
   await mkdir(join(home, '.claude'), { recursive: true })

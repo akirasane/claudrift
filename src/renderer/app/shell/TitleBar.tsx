@@ -25,7 +25,7 @@ export function TitleBar(): React.JSX.Element {
       style={{ ...drag, paddingRight: 'calc(100vw - env(titlebar-area-width, 100vw))' }}
       className="flex h-10 shrink-0 items-center gap-3 border-b border-border bg-bg-0 pl-3"
     >
-      <span className="shrink-0 text-sm font-semibold tracking-tight text-fg-2">ccwrap</span>
+      <span className="shrink-0 text-sm font-semibold tracking-tight text-fg-2">claudrift</span>
       <TabStrip />
       <div data-testid="title-drag-gap" aria-hidden className="h-full min-w-4 flex-1" style={drag} />
       <div className="flex shrink-0 items-center gap-2" style={noDrag}>

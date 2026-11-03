@@ -29,7 +29,7 @@ export function ItemsWorkspace({ kinds, cwd }: { kinds: ItemKind[]; cwd?: string
   const results = useQueries({
     queries: wanted.map((k) => ({
       queryKey: configKeys.items(k, cwd),
-      queryFn: () => window.ccwrap.items.list({ kind: k, cwd })
+      queryFn: () => window.claudrift.items.list({ kind: k, cwd })
     }))
   })
   const byKind = new Map(wanted.map((k, i) => [k, results[i]!] as const))

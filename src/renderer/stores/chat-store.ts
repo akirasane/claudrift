@@ -111,7 +111,7 @@ const isDelta = (e: SessionEvent): boolean =>
   e.t === 'task_progress' ||
   e.t === 'tool_progress'
 
-const CTX_KEY = 'ccwrap.ctxWindow'
+const CTX_KEY = 'claudrift.ctxWindow'
 
 /** model -> context window learned from past results (localStorage; best effort). */
 export function getCachedCtxWindow(model: string | undefined): number | undefined {
@@ -276,7 +276,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       }))
       if (wasBypass) toast.info('Bypass mode ended', { description: 'This session was suspended. It resumes in Default mode.' })
       try {
-        await window.ccwrap.session.close(localId)
+        await window.claudrift.session.close(localId)
       } catch {
         /* already gone in main */
       }
@@ -286,7 +286,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       const localId = get().convs[convId]?.localId
       if (localId) {
         try {
-          await window.ccwrap.session.close(localId)
+          await window.claudrift.session.close(localId)
         } catch {
           /* already gone in main */
         }
@@ -363,13 +363,13 @@ export const useChatStore = create<ChatState>((set, get) => {
       patch(convId, (x) => addUserItem(x, text, Date.now(), images, messageId))
       try {
         if (c.localId) {
-          await window.ccwrap.session.send({ localId: c.localId, text, messageId, ...(images?.length ? { images } : {}) })
+          await window.claudrift.session.send({ localId: c.localId, text, messageId, ...(images?.length ? { images } : {}) })
         } else {
           const mode = get().modes[convId]
           if (mode) startRequested.set(convId, mode)
           const model = get().draftModels[convId]
           const extraDirs = useExtraDirs.getState().dirsFor(c.cwd)
-          const { localId } = await window.ccwrap.session.start({
+          const { localId } = await window.claudrift.session.start({
             cwd: c.cwd,
             prompt: text,
             messageId,
@@ -397,7 +397,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       patch(convId, clearTranscript)
       if (!c.localId) return
       try {
-        await window.ccwrap.session.send({ localId: c.localId, text: '/clear' })
+        await window.claudrift.session.send({ localId: c.localId, text: '/clear' })
       } catch (err) {
         fail(convId, err)
       }
@@ -408,7 +408,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       if (!localId) return
       patch(convId, markTasksStopping)
       try {
-        await window.ccwrap.session.interrupt(localId)
+        await window.claudrift.session.interrupt(localId)
       } catch (err) {
         fail(convId, err)
       }
@@ -419,7 +419,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       if (!localId) return
       patch(convId, (c) => markTasksStopping(c, taskId))
       try {
-        await window.ccwrap.session.stopTask(localId, taskId)
+        await window.claudrift.session.stopTask(localId, taskId)
       } catch (err) {
         fail(convId, err)
       }
@@ -430,7 +430,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       if (!localId) return
       patch(convId, (x) => resolvePermission(x, reqId, decision, Date.now()))
       try {
-        await window.ccwrap.session.permissionReply({
+        await window.claudrift.session.permissionReply({
           localId,
           reqId,
           decision,
@@ -451,7 +451,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       const localId = get().convs[convId]?.localId
       if (!localId) return
       try {
-        await window.ccwrap.session.setPermissionMode(localId, mode)
+        await window.claudrift.session.setPermissionMode(localId, mode)
       } catch (err) {
         // Refused: put the previous mode back. Never show a mode the engine is not in.
         set((s) => {
@@ -478,7 +478,7 @@ export const useChatStore = create<ChatState>((set, get) => {
         return
       }
       try {
-        await window.ccwrap.session.setModel(localId, model)
+        await window.claudrift.session.setModel(localId, model)
         patch(convId, (c) => ({ ...c, meta: { ...c.meta, model } }))
       } catch (err) {
         fail(convId, err)

@@ -42,7 +42,7 @@ export function itemDirtyKey(ref: ConfigFileRef): string {
 export function useItemBuffer(ref: ConfigFileRef, readOnly: boolean): ItemBuffer {
   const qc = useQueryClient()
   const key = configKeys.file(ref)
-  const q = useQuery({ queryKey: key, queryFn: () => window.ccwrap.config.read(ref) })
+  const q = useQuery({ queryKey: key, queryFn: () => window.claudrift.config.read(ref) })
   const snapshot = q.data
 
   const [base, setBase] = useState<ConfigSnapshot | undefined>(undefined)
@@ -83,7 +83,7 @@ export function useItemBuffer(ref: ConfigFileRef, readOnly: boolean): ItemBuffer
       if (readOnly) return
       setSaving(true)
       try {
-        const res = await window.ccwrap.config.write({ ref, text: textRef.current, baseHash })
+        const res = await window.claudrift.config.write({ ref, text: textRef.current, baseHash })
         if (res.ok) {
           qc.setQueryData(key, res.snapshot)
           void qc.invalidateQueries({ queryKey: ['items', ref.kind] })

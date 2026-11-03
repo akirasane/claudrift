@@ -236,7 +236,7 @@ export function HookEntryForm({ entry, onChange }: { entry: RawObj; onChange: (e
 
       {t === 'command' && (
         <>
-          <TextField entry={entry} k="command" label="Command" mono onChange={onChange} hint="Runs automatically when the event fires. ccwraper never runs it." />
+          <TextField entry={entry} k="command" label="Command" mono onChange={onChange} hint="Runs automatically when the event fires. Claudrift never runs it." />
           <div className="flex flex-wrap items-end gap-3">
             <SelectField entry={entry} k="shell" label="Shell" options={['bash', 'powershell']} onChange={onChange} />
             <NumberField entry={entry} k="timeout" label="Timeout (seconds)" onChange={onChange} />

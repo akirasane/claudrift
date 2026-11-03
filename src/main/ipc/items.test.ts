@@ -22,7 +22,7 @@ let dispose: () => void
 const call = async (ch: string, raw: unknown): Promise<any> => handlers.get(ch)!({}, raw)
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ccwrap-ipc-items-'))
+  root = await mkdtemp(join(tmpdir(), 'claudrift-ipc-items-'))
   await mkdir(join(root, 'home'), { recursive: true })
   dispose = registerItemsIpc({
     send: () => undefined,

@@ -18,7 +18,7 @@ const projSettings = (): ConfigFileRef => ({ kind: 'settings', scope: 'project',
 const localSettings = (): ConfigFileRef => ({ kind: 'settings', scope: 'local', cwd: proj })
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ccwrap-cfg-'))
+  root = await mkdtemp(join(tmpdir(), 'claudrift-cfg-'))
   home = join(root, 'home')
   proj = join(root, 'proj')
   backups = join(root, 'userData', 'backups')

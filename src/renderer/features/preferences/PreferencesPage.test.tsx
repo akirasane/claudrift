@@ -35,7 +35,7 @@ function setup(hotkeyError?: string, initial: Partial<AppPrefs> = {}) {
       }
     }
   })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     prefs: { get: vi.fn(async () => ({ ...structuredClone(DEFAULT_PREFS), ...initial })), set, onChanged: vi.fn(() => () => {}) },
     app: { info: vi.fn(async () => info) },
     update: {
@@ -155,7 +155,7 @@ describe('PreferencesPage', () => {
     setup()
     expect((await screen.findByTestId('update-current')).textContent).toBe('0.1.0')
     await waitFor(() => expect(screen.getByTestId('update-status').textContent).toMatch(/latest version/))
-    const w = (window as unknown as { ccwrap: { update: { check: ReturnType<typeof vi.fn> } } }).ccwrap
+    const w = (window as unknown as { claudrift: { update: { check: ReturnType<typeof vi.fn> } } }).claudrift
     await userEvent.click(screen.getByTestId('update-check'))
     expect(w.update.check).toHaveBeenCalledTimes(1)
     await userEvent.click(screen.getByTestId('update-auto'))

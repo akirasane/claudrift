@@ -46,7 +46,7 @@ function seedPending(toolName: string, input: unknown): void {
 
 beforeEach(() => {
   permissionReply.mockClear()
-  ;(globalThis as unknown as { window: { ccwrap: unknown } }).window.ccwrap = { session: { permissionReply } }
+  ;(globalThis as unknown as { window: { claudrift: unknown } }).window.claudrift = { session: { permissionReply } }
 })
 
 describe('AskUserQuestion dialog', () => {

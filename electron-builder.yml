@@ -1,5 +1,5 @@
-appId: com.ccwraper.app
-productName: ccwraper
+appId: com.claudrift.app
+productName: Claudrift
 directories:
   output: dist
   buildResources: build
@@ -21,7 +21,7 @@ electronDist: node_modules/electron/dist
 win:
   target:
     - nsis
-  icon: build/icon.png
+  icon: build/icon.ico
 nsis:
   artifactName: ${productName}-Setup-${version}.${ext}
   oneClick: false
@@ -32,7 +32,7 @@ nsis:
 publish:
   provider: github
   owner: akirasane
-  repo: ccwraper
+  repo: claudrift
   releaseType: release
 electronFuses:
   runAsNode: false

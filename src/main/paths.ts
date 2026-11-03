@@ -122,7 +122,7 @@ export function resetClaudeBinaryCache(): void {
 }
 
 /**
- * Choose the claude binary (D1). CCWRAP_CLAUDE_PATH always wins; else the user's install if its
+ * Choose the claude binary (D1). CLAUDRIFT_CLAUDE_PATH always wins; else the user's install if its
  * version is not older than the SDK's bundled CLI; else the bundled one. Cached after first call.
  */
 export function resolveClaudeBinary(): ClaudeBinaryInfo {
@@ -134,8 +134,8 @@ export function resolveClaudeBinary(): ClaudeBinaryInfo {
     ...(note ? { note } : {})
   })
   // Test-only override: the packaged smoke uses it to prove the bundled (unpacked) binary spawns.
-  if (process.env['CCWRAP_CLAUDE_SOURCE'] === 'bundled') return (cached = bundled('forced by CCWRAP_CLAUDE_SOURCE=bundled'))
-  const fromEnv = process.env['CCWRAP_CLAUDE_PATH']
+  if (process.env['CLAUDRIFT_CLAUDE_SOURCE'] === 'bundled') return (cached = bundled('forced by CLAUDRIFT_CLAUDE_SOURCE=bundled'))
+  const fromEnv = process.env['CLAUDRIFT_CLAUDE_PATH']
   if (fromEnv && existsSync(fromEnv)) {
     const version = probeVersion(fromEnv)
     return (cached = { path: fromEnv, ...(version ? { version } : {}), source: 'env' })
@@ -148,7 +148,7 @@ export function resolveClaudeBinary(): ClaudeBinaryInfo {
   const note = version
     ? `user claude ${version} is older than bundled ${bundledVersion}; using bundled`
     : 'could not read user claude version; using bundled'
-  console.warn('[ccwrap]', note)
+  console.warn('[claudrift]', note)
   return (cached = bundled(note))
 }
 

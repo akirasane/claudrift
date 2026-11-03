@@ -28,7 +28,7 @@ function installApi(): void {
   write = vi.fn(async (): Promise<ConfigWriteResult> => ({ ok: false, code: 'io', message: 'unset' }))
   resolve = vi.fn(async (): Promise<ResolvedSettingsView> => ({ effective: {}, provenance: {}, sources: [] }))
   changed = undefined
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     config: {
       read: vi.fn(async (ref: ConfigFileRef) => files[ref.scope] ?? snap(ref, '', null)),
       write,

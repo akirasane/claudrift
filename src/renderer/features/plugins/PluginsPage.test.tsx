@@ -40,7 +40,7 @@ beforeEach(() => {
   api.list.mockResolvedValue(LIST)
   api.browse.mockResolvedValue(BROWSE)
   api.mutate.mockResolvedValue({ ok: true, output: 'done' })
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = { plugins: api }
+  ;(window as unknown as { claudrift: unknown }).claudrift = { plugins: api }
 })
 
 function mount(cwd: string | null = 'C:/proj'): void {

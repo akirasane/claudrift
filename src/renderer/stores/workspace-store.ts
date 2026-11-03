@@ -6,7 +6,7 @@ import type { PersistedTabs } from '@/features/tabs/tab-persist'
 import { useChatStore } from '@/stores/chat-store'
 import { useDirtyRegistry } from '@/stores/dirty-registry'
 
-const STORAGE_KEY = 'ccwrap.lastCwd'
+const STORAGE_KEY = 'claudrift.lastCwd'
 
 /** Same idea as main's normalizeCwdKey: slash style, trailing separator and (Windows) case are ignored. */
 export function cwdKey(p: string): string {
@@ -152,7 +152,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => {
     loaded.add(convId)
     if (get().activeConvId === convId) set({ loadingSession: true })
     try {
-      const events = await window.ccwrap.history.load({ sessionId, cwd })
+      const events = await window.claudrift.history.load({ sessionId, cwd })
       useChatStore.getState().seedFromHistory(convId, events)
       if ((fileSize ?? 0) > TRUNCATION_BYTES && events.length < TRUNCATION_EVENTS) {
         useChatStore.getState().setNotice(convId, 'History may be incomplete (large or compacted session)')
@@ -339,7 +339,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => {
     setFocusItem: (focusItem) => set({ focusItem }),
 
     addFolder: async () => {
-      const picked = await window.ccwrap.dialog.pickDirectory()
+      const picked = await window.claudrift.dialog.pickDirectory()
       if (!picked) return
       set((s) => ({
         extraCwds: s.extraCwds.some((c) => cwdKey(c) === cwdKey(picked)) ? s.extraCwds : [...s.extraCwds, picked]

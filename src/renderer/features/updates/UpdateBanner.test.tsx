@@ -9,7 +9,7 @@ let install: ReturnType<typeof vi.fn>
 
 function setup(initial: UpdateState): void {
   install = vi.fn(async () => true)
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     update: {
       getState: vi.fn(async () => initial),
       check: vi.fn(),
@@ -48,7 +48,7 @@ describe('UpdateBanner', () => {
     setup({ kind: 'ready', version: '0.6.0' })
     await userEvent.click(await screen.findByTestId('update-banner-dismiss'))
     expect(screen.queryByTestId('update-banner')).toBeNull()
-    expect(window.localStorage.getItem('ccwrap.update.dismissed')).toBe('0.6.0')
+    expect(window.localStorage.getItem('claudrift.update.dismissed')).toBe('0.6.0')
     act(() => push({ kind: 'downloading', version: '0.6.0', percent: 100 }))
     expect(screen.queryByTestId('update-banner')).toBeNull()
     act(() => push({ kind: 'ready', version: '0.7.0' }))

@@ -51,12 +51,12 @@ function Row({
 
 function usePrefs() {
   const qc = useQueryClient()
-  const query = useQuery<AppPrefs>({ queryKey: PREFS_KEY, queryFn: () => window.ccwrap.prefs.get(), retry: false })
+  const query = useQuery<AppPrefs>({ queryKey: PREFS_KEY, queryFn: () => window.claudrift.prefs.get(), retry: false })
   const [hotkey, setHotkey] = React.useState<HotkeyStatus | undefined>()
   const [saveError, setSaveError] = React.useState<string | undefined>()
 
   React.useEffect(() => {
-    const off = window.ccwrap.prefs?.onChanged?.((p) => qc.setQueryData(PREFS_KEY, p))
+    const off = window.claudrift.prefs?.onChanged?.((p) => qc.setQueryData(PREFS_KEY, p))
     return off
   }, [qc])
 
@@ -64,7 +64,7 @@ function usePrefs() {
     async (patch: AppPrefsPatch): Promise<void> => {
       setSaveError(undefined)
       try {
-        const res = await window.ccwrap.prefs.set(patch)
+        const res = await window.claudrift.prefs.set(patch)
         qc.setQueryData(PREFS_KEY, res.prefs)
         useModePrefs.getState().set(res.prefs.allowBypassMode === true)
         useToolCardPrefs.getState().set(res.prefs.toolCardsExpanded === true)
@@ -219,7 +219,7 @@ function HotkeySection({
   return (
     <Section id="hotkey" title="Global hotkey">
       <Row
-        label="Show or hide ccwraper"
+        label="Show or hide Claudrift"
         hint="Works from any app. Off by default because it takes the shortcut system-wide."
         htmlFor="hotkey-enabled"
       >
@@ -255,7 +255,7 @@ function ShellSection(): React.JSX.Element {
   const setDefaultShell = useTerminalStore((s) => s.setDefaultShell)
   const shells = useQuery<ShellProfile[]>({
     queryKey: ['pty', 'shells'],
-    queryFn: async () => (await window.ccwrap.pty?.listShells?.()) ?? [],
+    queryFn: async () => (await window.claudrift.pty?.listShells?.()) ?? [],
     retry: false
   })
   const list = shells.data ?? []
@@ -285,12 +285,12 @@ function ShellSection(): React.JSX.Element {
 
 function UpdatesSection({ prefs, set }: { prefs: AppPrefs; set: (p: AppPrefsPatch) => void }): React.JSX.Element {
   const state = useUpdateState()
-  const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.ccwrap.app.info(), retry: false })
+  const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.claudrift.app.info(), retry: false })
   const [checking, setChecking] = React.useState(false)
   const disabled = state.kind === 'disabled'
   const check = (): void => {
     setChecking(true)
-    void Promise.resolve(window.ccwrap.update.check())
+    void Promise.resolve(window.claudrift.update.check())
       .catch(() => {})
       .finally(() => setChecking(false))
   }
@@ -346,7 +346,7 @@ function Field({ label, value, testId }: { label: string; value: string | undefi
 }
 
 function AboutSection(): React.JSX.Element {
-  const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.ccwrap.app.info(), retry: false })
+  const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.claudrift.app.info(), retry: false })
   const i = info.data
   return (
     <Section id="about" title="About">
@@ -354,7 +354,7 @@ function AboutSection(): React.JSX.Element {
         <p className="py-2 text-base text-fg-3">{info.isError ? 'App info is unavailable.' : 'Loading...'}</p>
       ) : (
         <dl>
-          <Field label="ccwraper" value={`${i.version}${i.packaged ? '' : ' (dev)'}`} testId="about-version" />
+          <Field label="Claudrift" value={`${i.version}${i.packaged ? '' : ' (dev)'}`} testId="about-version" />
           <Field label="Electron" value={i.electronVersion} testId="about-electron" />
           <Field label="Claude Code" value={i.claudeVersion} testId="about-claude-version" />
           <Field label="Claude source" value={i.claudeSource} testId="about-claude-source" />
@@ -403,7 +403,7 @@ export function PreferencesPage(): React.JSX.Element {
               </Row>
               <Row
                 label="Show caveman badge"
-                hint="Token savings from the caveman plugin. Read-only: ccwraper only reads the plugin's status files."
+                hint="Token savings from the caveman plugin. Read-only: Claudrift only reads the plugin's status files."
                 htmlFor="show-caveman"
               >
                 <Toggle

@@ -37,7 +37,7 @@ describe('limitsFromUsage', () => {
   })
 
   it('end to end through LimitsService: 1% stays 1% (not read as 100%) and 58% shows 58', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ccwrap-lim-'))
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-lim-'))
     try {
       const svc = new LimitsService({ file: join(dir, 'limits.json'), broadcast: () => {} })
       for (const l of limitsFromUsage(RESP)) svc.ingest(l)

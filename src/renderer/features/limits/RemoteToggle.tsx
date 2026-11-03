@@ -9,7 +9,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 export function useRemoteState(): RemoteState {
   const [state, setState] = React.useState<RemoteState>(EMPTY_REMOTE)
   React.useEffect(() => {
-    const api = window.ccwrap?.remote
+    const api = window.claudrift?.remote
     if (!api) return
     let alive = true
     void Promise.resolve(api.getState())
@@ -26,7 +26,7 @@ export function useRemoteState(): RemoteState {
 
 /** Starts Remote Control in the active project (or stops it when running). Returns a short note for the UI. */
 export async function toggleRemote(): Promise<string> {
-  const api = window.ccwrap?.remote
+  const api = window.claudrift?.remote
   if (!api) return 'Remote Control is not available'
   const cur = await api.getState()
   if (cur.status === 'on' || cur.status === 'starting') {

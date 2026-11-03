@@ -45,7 +45,7 @@ function setup(): void {
     commits: [{ hash: 'abcdef1234', short: 'abcdef1', subject: 'first commit', author: 'Ann', date: '2026-01-02T03:04:05Z' }]
   }))
   listener = undefined
-  ;(window as unknown as { ccwrap: unknown }).ccwrap = {
+  ;(window as unknown as { claudrift: unknown }).claudrift = {
     git: { status, diff, log },
     session: {
       onEvent: (cb: (p: SessionEventPayload) => void) => {
@@ -155,7 +155,7 @@ describe('GitPage', () => {
       (b) => `${b.getAttribute('aria-label') ?? ''} ${b.textContent ?? ''}`
     )
     expect(labels.filter((l) => /\b(stage|unstage|commit|discard|checkout|reset|push|pull|revert|restore|stash)\b/i.test(l))).toEqual([])
-    const api = (window as unknown as { ccwrap: { git: object } }).ccwrap.git
+    const api = (window as unknown as { claudrift: { git: object } }).claudrift.git
     expect(Object.keys(api).sort()).toEqual(['diff', 'log', 'status'])
   })
 })

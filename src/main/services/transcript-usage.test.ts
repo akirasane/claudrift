@@ -12,7 +12,7 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
 function tmp(): string {
-  const d = mkdtempSync(join(tmpdir(), 'ccwrap-usage-'))
+  const d = mkdtempSync(join(tmpdir(), 'claudrift-usage-'))
   dirs.push(d)
   return d
 }

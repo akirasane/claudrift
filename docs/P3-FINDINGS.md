@@ -18,7 +18,7 @@ Two runs:
 | 1b | Skills: Form edit keeps comments and other keys, backup appears | pass | description edited; `# keep this comment`, `custom-key`, trailing comment kept; backup `p3-ud\backups\<hash>-SKILL.md.<ts>.bak`, toast shows the path. Found: untouched flow collections were re-padded (`[1, 2]` -> `[ 1, 2 ]`); fixed (below) |
 | 1c | Skills: Raw with broken YAML | pass | lint marker on the line, message above the editor, Save disabled ("Fix the frontmatter to save"), Form shows the read-only notice with Open Raw; Revert restores |
 | 1d | Skills: rename | pass | dir moved to `beta-skill\`, `name:` updated, other keys and comment kept |
-| 1e | Skills: delete -> trash | pass | dialog names the trash path (after the AppInfo change), item in `p3-ud\trash\<ts>-skill-user-beta-skill\` with `ccwrap-trash.json` manifest, gone from the list. Same volume, so the EXDEV copy path was not exercised live |
+| 1e | Skills: delete -> trash | pass | dialog names the trash path (after the AppInfo change), item in `p3-ud\trash\<ts>-skill-user-beta-skill\` with `claudrift-trash.json` manifest, gone from the list. Same volume, so the EXDEV copy path was not exercised live |
 | 1f | Skills: external edit (clean), banner (dirty), conflict | pass | clean view adopted the disk text in under 2.5 s; dirty buffer got "This file changed on disk. Your unsaved edits are kept." (Reload / Keep mine); Save then gave the conflict banner "nothing was saved" (Reload / Overwrite); Overwrite wrote the buffer |
 | 2a | Commands: namespaced `a/b` | pass | file `commands\a\b.md`, listed as `/a:b` |
 | 2b | Commands: same name user + project | pass | `Conflict` chip on both rows |
@@ -37,7 +37,7 @@ Two runs:
 | 10 | Editor search panel themed | pass | dark input and buttons, accent checkboxes (small native-sized, see gaps) |
 | 11 | Fonts | pass | `smoke` "fonts applied": `Geist Variable` / `Geist Mono Variable` |
 | 12 | conhost / OpenConsole (extra 5) | pass | see below |
-| 13 | Smoke script | pass | `npm run smoke` visits fonts, Settings, MCP, Memory, Skills, Agents, Hooks, the Commands tab, Hooks scopes + Effective, the lazy editor, the terminal; `CCWRAP_SMOKE_LIVE=1` adds one subagent turn (not run end to end through the script, see below) |
+| 13 | Smoke script | pass | `npm run smoke` visits fonts, Settings, MCP, Memory, Skills, Agents, Hooks, the Commands tab, Hooks scopes + Effective, the lazy editor, the terminal; `CLAUDRIFT_SMOKE_LIVE=1` adds one subagent turn (not run end to end through the script, see below) |
 
 ### conhost / OpenConsole (live, Electron)
 `conpty.dll` and `conpty.node` are loaded from `node_modules\node-pty\prebuilds\win32-x64\` in the app's main process. Descendants of the app PID by PID: opening Git Bash added `OpenConsole.exe` + `bash.exe` x2, opening PowerShell 7 added `OpenConsole.exe` + `pwsh.exe`; after typing `exit` in each, 3 s later the descendant list was back to the baseline (`OpenConsole.exe` + `pwsh.exe` of the initial tab only). No `conhost.exe` was ever a child of the app. (WP7's fix holds in the real app.)

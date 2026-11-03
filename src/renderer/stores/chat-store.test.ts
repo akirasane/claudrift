@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CcwrapApi, SessionEventPayload } from '@shared/ipc'
+import type { ClaudriftApi, SessionEventPayload } from '@shared/ipc'
 import { eventFixtures as fx } from '@/features/chat/model/fixtures'
 import { initIpcBridge } from '@/lib/ipc-bridge'
 import { flushChatEvents, getCachedCtxWindow, useChatStore } from './chat-store'
 
-type Session = CcwrapApi['session']
+type Session = ClaudriftApi['session']
 let listener: ((p: SessionEventPayload) => void) | undefined
 let session: { [K in keyof Session]: ReturnType<typeof vi.fn> }
 
@@ -28,7 +28,7 @@ beforeEach(() => {
       }
     })
   }
-  ;(globalThis as unknown as { window: { ccwrap: unknown } }).window.ccwrap = { session }
+  ;(globalThis as unknown as { window: { claudrift: unknown } }).window.claudrift = { session }
   useChatStore.setState({ convs: {}, localToConv: {}, modes: {} })
 })
 

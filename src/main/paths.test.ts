@@ -97,9 +97,9 @@ describe('config locations', () => {
 })
 
 describe('item paths (P3)', () => {
-  const home = join(tmpdir(), 'ccwrap-fixture-home')
-  const cfg = join(tmpdir(), 'ccwrap-fixture-cfg')
-  const proj = join(tmpdir(), 'ccwrap-fixture-proj')
+  const home = join(tmpdir(), 'claudrift-fixture-home')
+  const cfg = join(tmpdir(), 'claudrift-fixture-cfg')
+  const proj = join(tmpdir(), 'claudrift-fixture-proj')
 
   it('roots per kind and scope', () => {
     expect(itemsRoot('skill', 'user', undefined, {}, home)).toBe(join(home, '.claude', 'skills'))
