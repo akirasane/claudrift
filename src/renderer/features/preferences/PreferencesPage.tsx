@@ -11,6 +11,7 @@ import { AutoResumeCard } from '@/features/autoresume/AutoResumeCard'
 import { useTerminalStore } from '@/features/terminal/terminal-store'
 import { describeUpdate, useUpdateState } from '@/features/updates/use-update-state'
 import { acceleratorFromEvent } from './accelerator'
+import { ClaudeCliSection } from './ClaudeCliSection'
 
 const PREFS_KEY = ['prefs'] as const
 
@@ -388,6 +389,7 @@ export function PreferencesPage(): React.JSX.Element {
             <NotificationsSection prefs={prefs} set={(p) => void set(p)} />
             <HotkeySection prefs={prefs} hotkey={hotkey} set={(p) => void set(p)} />
             <UpdatesSection prefs={prefs} set={(p) => void set(p)} />
+            <ClaudeCliSection />
             <Section id="statusbar" title="Status bar">
               <Row
                 label="Show usage limits"

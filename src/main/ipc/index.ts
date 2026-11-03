@@ -2,6 +2,8 @@ import type { SessionManager } from '../services/session-manager'
 import { registerAutoResumeIpc } from './autoresume'
 import { registerAppIpc } from './app'
 import type { AppIpcDeps } from './app'
+import { registerClaudeCliIpc } from './claude-cli'
+import type { ClaudeCliIpcDeps } from './claude-cli'
 import { registerConfigIpc } from './config'
 import { combineDisposers } from './dispose'
 import type { Disposer } from './dispose'
@@ -49,6 +51,7 @@ export interface IpcDeps {
   limits?: LimitsIpcDeps
   caveman?: CavemanIpcDeps
   remote?: RemoteIpcDeps
+  claudeCli?: ClaudeCliIpcDeps
   /** WP14 sink for renderer auto-resume reports (optional so older callers keep working). */
   autoResume?: Parameters<typeof registerAutoResumeIpc>[0]
 }
@@ -68,6 +71,7 @@ export function registerIpc(deps: IpcDeps): Disposer {
     deps.limits ? registerLimitsIpc(deps.limits) : () => {},
     deps.caveman ? registerCavemanIpc(deps.caveman) : () => {},
     deps.remote ? registerRemoteIpc(deps.remote) : () => {},
+    deps.claudeCli ? registerClaudeCliIpc(deps.claudeCli) : () => {},
     registerConfigIpc({ send: deps.send, registry: deps.registry }),
     registerItemsIpc({ send: deps.send, registry: deps.registry }),
     registerMcpIpc(),

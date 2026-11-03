@@ -6,7 +6,7 @@ import type { SessionEventPayload } from '../shared/ipc'
 import { registerIpc } from './ipc'
 import type { Disposer } from './ipc/dispose'
 import { isAppNavigation } from './navigation'
-import { claudeConfigDir, limitsPath, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
+import { claudeConfigDir, limitsPath, readSdkVersions, resetClaudeBinaryCache, resolveClaudeBinary, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
 import { AutoResumeMain } from './services/autoresume-main'
 import { AuthStatusService } from './services/auth-status'
 import { runClaude } from './services/claude-cli'
@@ -24,6 +24,7 @@ import { PluginRegistry } from './services/plugin-registry'
 import { PrefsService } from './services/prefs-service'
 import { installQuitGuard } from './services/quit-guard'
 import { SessionManager } from './services/session-manager'
+import { ClaudeCliService } from './services/claude-cli-service'
 import { UpdateService } from './services/update-service'
 import { UsageLedger } from './services/usage-ledger'
 import { UsageService } from './services/usage-service'
@@ -118,6 +119,12 @@ const manager: SessionManager = new SessionManager(
   },
   { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info) }
 )
+const claudeCli = new ClaudeCliService({
+  resolve: resolveClaudeBinary,
+  sdkVersions: readSdkVersions,
+  resetCache: resetClaudeBinaryCache,
+  busyCount: () => manager.busyCount()
+})
 const notifications = new NotificationService({ getWindow, prefs, manager })
 const autoResume = new AutoResumeMain({ powerSave: powerSaveBlocker, announce: (r) => notifications.announce(r) })
 
@@ -230,6 +237,7 @@ if (!app.requestSingleInstanceLock()) {
       files,
       autoResume: { report: (r) => autoResume.report(r) },
       update: updates,
+      claudeCli,
       limits,
       caveman,
       remote: { getState: () => remote.getState(), start: (a) => remote.start(a), stop: () => remote.stop(), trust: (a) => trustWorkspace(a.cwd) }

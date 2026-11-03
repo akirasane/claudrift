@@ -81,5 +81,8 @@ export const IpcChannels = {
   remoteGet: 'remote:get',
   remoteStart: 'remote:start',
   remoteStop: 'remote:stop',
-  remoteTrust: 'remote:trust'
+  remoteTrust: 'remote:trust',
+  // ---- Claude CLI / SDK versions ----
+  claudeCliStatus: 'claudecli:status',
+  claudeCliUpdate: 'claudecli:update'
 } as const

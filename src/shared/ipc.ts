@@ -23,6 +23,7 @@ import type { AppPrefs, AppPrefsPatch, AuthStatus, AutoResumeReport, PrefsSetRes
 import type { AppInfo, HistorySessionInfo, ProjectInfo, SessionEvent } from './events'
 import type { GitDiff, GitLog, GitStatus } from './git'
 import type { CavemanState, LimitsState } from './limits'
+import type { ClaudeCliStatus, ClaudeCliUpdateResult } from './claude-cli'
 import type { PluginsBrowseResult, PluginsListResult, PluginsMutationResult } from './plugins'
 import type { RemoteState } from './remote'
 import type { UsageQuery, UsageSummary } from './usage'
@@ -323,6 +324,8 @@ export function looksAbsolute(p: string): boolean {
 
 export const RemoteTrustSchema = z.object({ cwd: z.string().min(1).refine((p) => looksAbsolute(p), { message: 'cwd must be an absolute path' }) })
 
+export const ClaudeCliStatusArgsSchema = z.object({ refresh: z.boolean().optional() })
+
 export const RemoteStartSchema = z.object({
   cwd: z
     .string()
@@ -468,6 +471,11 @@ export interface ClaudriftApi {
     stop(): Promise<RemoteState>
     trust(a: { cwd: string }): Promise<{ ok: boolean; message?: string }>
     onState(cb: (s: RemoteState) => void): () => void
+  }
+  claudeCli: {
+    status(a?: { refresh?: boolean }): Promise<ClaudeCliStatus>
+    /** Runs `<claude> update`; never rejects. */
+    update(): Promise<ClaudeCliUpdateResult>
   }
   caveman: {
     getState(): Promise<CavemanState>

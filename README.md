@@ -17,6 +17,7 @@ Claudrift is a desktop GUI for Claude Code, built on the Claude Agent SDK (Elect
 - Remote control toggle that runs `claude remote-control`.
 - Extra folders: add more directories to a session's working set.
 - Git status view, embedded terminal, update banner for installed builds.
+- Settings panel "Claude Code & SDK": active CLI path, version and source, latest npm versions, and an Update button for a user-installed CLI.
 
 ## Install
 
@@ -45,6 +46,7 @@ Details are in [docs/P5-FINDINGS.md](docs/P5-FINDINGS.md).
 - Resumed history does not show images from old turns.
 - Remote control sessions are separate sessions driven from claude.ai/code or the phone app, and the folder must be trusted by Claude Code; the app offers to grant that (after confirmation) by writing `hasTrustDialogAccepted` for the folder to `~/.claude.json`. The "on" detection is unverified against a live run.
 - Auto-resume works only while Claudrift is running.
+- The bundled CLI and the pinned Agent SDK update only with a new Claudrift release. Install `@anthropic-ai/claude-code` globally and the app prefers it, and can update it. Running chats keep the old CLI until restarted. Latest versions come from the npm registry and show "unknown" when offline.
 - In-app updates need the GitHub repo and its releases to be publicly readable.
 
 ## Renamed from ccwraper
