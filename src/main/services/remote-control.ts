@@ -7,6 +7,8 @@ import type { RemoteStartArgs, RemoteState } from '../../shared/remote'
 const ANSI = /\u001b(?:\[[0-?]*[ -\/]*[@-~]|\][^\u0007\u001b]*(?:\u0007|\u001b\\)|[@-Z\\^_])/g
 const URL_RE = /https:\/\/[^\s"'<>)]+/
 const LOG_MAX = 50
+/** No URL printed but the process is still alive after this long: treat it as running (output format unverified). */
+const READY_AFTER_MS = 6000
 
 export function stripAnsi(s: string): string {
   return s.replace(ANSI, '')
@@ -21,10 +23,12 @@ export interface RemoteControlDeps {
   /** Kills the whole tree; default is taskkill /T /F on Windows, SIGTERM elsewhere. */
   kill?: (child: ChildProcess) => void
   platform?: NodeJS.Platform
+  readyAfterMs?: number
 }
 
 export class RemoteControlService {
   private child: ChildProcess | null = null
+  private readyTimer: ReturnType<typeof setTimeout> | undefined
   private state: RemoteState = { status: 'off', log: [] }
   private readonly spawnFn: SpawnFn
   private readonly platform: NodeJS.Platform
@@ -59,6 +63,10 @@ export class RemoteControlService {
       return this.getState()
     }
     this.child = child
+    this.readyTimer = setTimeout(() => {
+      if (this.child === child && this.state.status === 'starting') this.set({ status: 'on' })
+    }, this.deps.readyAfterMs ?? READY_AFTER_MS)
+    this.readyTimer.unref?.()
     const feed = (buf: Buffer | string): void => {
       if (this.child !== child) return
       this.ingest(String(buf))
@@ -73,6 +81,7 @@ export class RemoteControlService {
     child.on('exit', (code) => {
       if (this.child !== child) return
       this.child = null
+      clearTimeout(this.readyTimer)
       if (this.state.status === 'off') return
       const last = [...this.state.log].reverse().find((l) => /error/i.test(l)) ?? this.state.log[this.state.log.length - 1]
       this.set({
@@ -86,6 +95,7 @@ export class RemoteControlService {
   }
 
   stop(): RemoteState {
+    clearTimeout(this.readyTimer)
     const child = this.child
     this.child = null
     if (child) this.killTree(child)
@@ -95,6 +105,7 @@ export class RemoteControlService {
   }
 
   dispose(): void {
+    clearTimeout(this.readyTimer)
     const child = this.child
     this.child = null
     if (child) this.killTree(child)

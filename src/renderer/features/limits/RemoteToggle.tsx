@@ -66,9 +66,9 @@ export function RemoteToggle(): React.JSX.Element {
             {s.status === 'error'
               ? `Remote Control failed: ${s.message ?? 'unknown error'}`
               : s.status === 'on'
-                ? `Remote Control is on${s.cwd ? ` in ${s.cwd}` : ''}. Open claude.ai/code or the phone app to drive sessions on this PC.`
+                ? `Remote Control is on${s.cwd ? ` in ${s.cwd}` : ''}. Open claude.ai/code or the phone app to drive sessions on this PC.${s.url ? '' : ' (no link was printed; look for this machine in the Claude app)'}${s.log.length ? ` Last output: ${s.log[s.log.length - 1]}` : ''}`
                 : s.status === 'starting'
-                  ? 'Remote Control is starting...'
+                  ? `Remote Control is starting...${s.log.length ? ` ${s.log[s.log.length - 1]}` : ''}`
                   : 'Remote Control is off. Turn it on to drive sessions on this PC from claude.ai/code or the phone app.'}
           </span>
         }
