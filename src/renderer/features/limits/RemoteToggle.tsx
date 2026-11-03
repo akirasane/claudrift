@@ -30,7 +30,7 @@ function requestTrustDialog(): void {
 }
 
 /** Starts Remote Control in the active project (or stops it when running). Returns a short note for the UI. */
-export async function toggleRemote(): Promise<string> {
+export async function toggleRemote(name?: string): Promise<string> {
   const api = window.claudrift?.remote
   if (!api) return 'Remote Control is not available'
   const cur = await api.getState()
@@ -44,13 +44,14 @@ export async function toggleRemote(): Promise<string> {
   }
   const cwd = useWorkspaceStore.getState().cwd
   if (!cwd) return 'Open a project first to start Remote Control'
-  await api.start({ cwd })
-  return 'Remote Control starting. It opens separate sessions you can drive from claude.ai/code or the phone app.'
+  const label = name?.trim() || `Claudrift - ${cwd.split(/[\\/]/).filter(Boolean).pop() ?? 'project'}`
+  await api.start({ cwd, name: label })
+  return `Remote Control starting as "${label}". It opens separate sessions you can drive from claude.ai/code or the phone app.`
 }
 
-export async function toggleRemoteWithToast(): Promise<void> {
+export async function toggleRemoteWithToast(name?: string): Promise<void> {
   try {
-    const note = await toggleRemote()
+    const note = await toggleRemote(name)
     if (note) toast(note)
   } catch (err) {
     toast.error('Remote Control failed', { description: err instanceof Error ? err.message : String(err) })
@@ -82,7 +83,7 @@ export function RemoteToggle(): React.JSX.Element {
         toast.error('Could not trust this folder', { description: r.message })
         return
       }
-      await api.start({ cwd: trustCwd })
+      await api.start({ cwd: trustCwd, name: s.name })
     } catch (err) {
       toast.error('Could not trust this folder', { description: err instanceof Error ? err.message : String(err) })
     }

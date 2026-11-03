@@ -19,7 +19,7 @@ describe('routeSlash', () => {
   it('routes /rc and /remote-control to the remote toggle', () => {
     expect(routeSlash('/rc')).toEqual({ kind: 'remote' })
     expect(routeSlash('/remote-control')).toEqual({ kind: 'remote' })
-    expect(routeSlash('/rc extra')).toBeNull()
+    expect(routeSlash('/rc my phone')).toEqual({ kind: 'remote', name: 'my phone' })
   })
 
   it('is case-insensitive on the command name', () => {

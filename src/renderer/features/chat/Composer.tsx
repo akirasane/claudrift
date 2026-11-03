@@ -187,7 +187,7 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
         usePaletteStore.getState().setOpen(true)
         break
       case 'remote':
-        void toggleRemoteWithToast()
+        void toggleRemoteWithToast(a.name)
         break
     }
   }
