@@ -1,7 +1,7 @@
 import { Copy, Radio } from 'lucide-react'
 import * as React from 'react'
 import { EMPTY_REMOTE, type RemoteState } from '@shared/remote'
-import { toast, Tooltip } from '@/components/ui'
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast, Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
@@ -24,6 +24,11 @@ export function useRemoteState(): RemoteState {
   return state
 }
 
+const trustListeners = new Set<() => void>()
+function requestTrustDialog(): void {
+  trustListeners.forEach((l) => l())
+}
+
 /** Starts Remote Control in the active project (or stops it when running). Returns a short note for the UI. */
 export async function toggleRemote(): Promise<string> {
   const api = window.claudrift?.remote
@@ -33,6 +38,10 @@ export async function toggleRemote(): Promise<string> {
     await api.stop()
     return 'Remote Control stopped'
   }
+  if (cur.status === 'error' && cur.needsTrust) {
+    requestTrustDialog()
+    return ''
+  }
   const cwd = useWorkspaceStore.getState().cwd
   if (!cwd) return 'Open a project first to start Remote Control'
   await api.start({ cwd })
@@ -41,7 +50,8 @@ export async function toggleRemote(): Promise<string> {
 
 export async function toggleRemoteWithToast(): Promise<void> {
   try {
-    toast(await toggleRemote())
+    const note = await toggleRemote()
+    if (note) toast(note)
   } catch (err) {
     toast.error('Remote Control failed', { description: err instanceof Error ? err.message : String(err) })
   }
@@ -51,6 +61,32 @@ export async function toggleRemoteWithToast(): Promise<void> {
 export function RemoteToggle(): React.JSX.Element {
   const s = useRemoteState()
   const active = s.status === 'on' || s.status === 'starting'
+  const [trustOpen, setTrustOpen] = React.useState(false)
+  const needsTrust = s.status === 'error' && Boolean(s.needsTrust)
+  React.useEffect(() => {
+    const open = (): void => setTrustOpen(true)
+    trustListeners.add(open)
+    return () => void trustListeners.delete(open)
+  }, [])
+  React.useEffect(() => {
+    if (needsTrust) setTrustOpen(true)
+  }, [needsTrust])
+  const trustCwd = s.cwd ?? useWorkspaceStore.getState().cwd ?? ''
+  const confirmTrust = async (): Promise<void> => {
+    setTrustOpen(false)
+    const api = window.claudrift?.remote
+    if (!api || !trustCwd) return
+    try {
+      const r = await api.trust({ cwd: trustCwd })
+      if (!r.ok) {
+        toast.error('Could not trust this folder', { description: r.message })
+        return
+      }
+      await api.start({ cwd: trustCwd })
+    } catch (err) {
+      toast.error('Could not trust this folder', { description: err instanceof Error ? err.message : String(err) })
+    }
+  }
   const copy = (): void => {
     if (!s.url) return
     void navigator.clipboard?.writeText(s.url).then(
@@ -89,6 +125,28 @@ export function RemoteToggle(): React.JSX.Element {
           <span>{s.status === 'error' ? 'ERR' : s.status === 'starting' ? '...' : active ? 'ON' : 'OFF'}</span>
         </button>
       </Tooltip>
+      <Dialog open={trustOpen} onOpenChange={setTrustOpen}>
+        <DialogContent data-testid="trust-dialog">
+          <DialogHeader>
+            <DialogTitle>Trust this folder?</DialogTitle>
+            <DialogDescription>
+              <span className="block break-all font-mono" data-testid="trust-path">
+                {trustCwd}
+              </span>
+              Claude Code runs commands and edits files in trusted folders. Only trust folders you own or whose contents you trust. This writes{' '}
+              <code>hasTrustDialogAccepted</code> for this folder to ~/.claude.json, the same as accepting the prompt in <code>claude</code>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setTrustOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" data-testid="trust-confirm" onClick={() => void confirmTrust()}>
+              Trust folder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {s.status === 'on' && s.url && (
         <button
           type="button"

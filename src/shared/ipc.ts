@@ -321,6 +321,8 @@ export function looksAbsolute(p: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(p) || /^[\\/]/.test(p)
 }
 
+export const RemoteTrustSchema = z.object({ cwd: z.string().min(1).refine((p) => looksAbsolute(p), { message: 'cwd must be an absolute path' }) })
+
 export const RemoteStartSchema = z.object({
   cwd: z
     .string()
@@ -464,6 +466,7 @@ export interface ClaudriftApi {
     getState(): Promise<RemoteState>
     start(a: { cwd: string; name?: string; permissionMode?: PermissionMode }): Promise<RemoteState>
     stop(): Promise<RemoteState>
+    trust(a: { cwd: string }): Promise<{ ok: boolean; message?: string }>
     onState(cb: (s: RemoteState) => void): () => void
   }
   caveman: {

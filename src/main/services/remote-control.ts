@@ -54,7 +54,7 @@ export class RemoteControlService {
     const args = ['remote-control']
     if (a.name) args.push('--name', a.name)
     if (a.permissionMode) args.push('--permission-mode', a.permissionMode)
-    this.state = { status: 'starting', name: a.name, cwd: a.cwd, log: [] }
+    this.state = { status: 'starting', name: a.name, cwd: a.cwd, log: [], needsTrust: false }
     let child: ChildProcess
     try {
       child = this.spawnFn(exe, args, { cwd: a.cwd })
@@ -84,11 +84,8 @@ export class RemoteControlService {
       clearTimeout(this.readyTimer)
       if (this.state.status === 'off') return
       const last = [...this.state.log].reverse().find((l) => /error/i.test(l)) ?? this.state.log[this.state.log.length - 1]
-      this.set({
-        status: 'error',
-        url: undefined,
-        message: last ?? `remote-control exited (code ${code ?? '?'})`
-      })
+      const message = last ?? `remote-control exited (code ${code ?? '?'})`
+      this.set({ status: 'error', url: undefined, message, needsTrust: /Workspace not trusted/i.test(`${this.state.log.join(' ')} ${message}`) })
     })
     this.broadcast()
     return this.getState()

@@ -80,5 +80,6 @@ export const IpcChannels = {
   remoteState: 'remote:state',
   remoteGet: 'remote:get',
   remoteStart: 'remote:start',
-  remoteStop: 'remote:stop'
+  remoteStop: 'remote:stop',
+  remoteTrust: 'remote:trust'
 } as const

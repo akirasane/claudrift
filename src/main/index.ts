@@ -15,6 +15,7 @@ import { GitService } from './services/git-service'
 import { FileSearchService } from './services/file-search'
 import { LimitsService } from './services/limits-service'
 import { UsageProbe } from './services/usage-probe'
+import { trustWorkspace } from './services/workspace-trust'
 import { RemoteControlService } from './services/remote-control'
 import { saverOptions } from '../shared/saver'
 import { HotkeyService } from './services/hotkey-service'
@@ -231,7 +232,7 @@ if (!app.requestSingleInstanceLock()) {
       update: updates,
       limits,
       caveman,
-      remote: { getState: () => remote.getState(), start: (a) => remote.start(a), stop: () => remote.stop() }
+      remote: { getState: () => remote.getState(), start: (a) => remote.start(a), stop: () => remote.stop(), trust: (a) => trustWorkspace(a.cwd) }
     })
     updates.start()
     caveman.start()

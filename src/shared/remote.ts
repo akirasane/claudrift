@@ -8,6 +8,8 @@ export interface RemoteState {
   name?: string
   cwd?: string
   message?: string
+  /** The CLI refused to start because the folder is not trusted by Claude Code. */
+  needsTrust?: boolean
   /** Last ~50 output lines, ANSI stripped. */
   log: string[]
 }

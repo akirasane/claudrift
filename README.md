@@ -43,7 +43,7 @@ Details are in [docs/P5-FINDINGS.md](docs/P5-FINDINGS.md).
 - File rewind restores only files changed by the edit tools. Shell side effects are not undone and the conversation is not rewound.
 - Extra folders apply to sessions started after they are added; a live session is not changed.
 - Resumed history does not show images from old turns.
-- Remote control sessions are separate sessions driven from claude.ai/code or the phone app, and the folder must already be trusted by `claude`. The "on" detection is unverified against a live run.
+- Remote control sessions are separate sessions driven from claude.ai/code or the phone app, and the folder must be trusted by Claude Code; the app offers to grant that (after confirmation) by writing `hasTrustDialogAccepted` for the folder to `~/.claude.json`. The "on" detection is unverified against a live run.
 - Auto-resume works only while Claudrift is running.
 - In-app updates need the GitHub repo and its releases to be publicly readable.
 

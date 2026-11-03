@@ -68,6 +68,7 @@ const api: ClaudriftApi = {
     getState: () => ipcRenderer.invoke(IpcChannels.remoteGet),
     start: (a) => ipcRenderer.invoke(IpcChannels.remoteStart, a),
     stop: () => ipcRenderer.invoke(IpcChannels.remoteStop),
+    trust: (a) => ipcRenderer.invoke(IpcChannels.remoteTrust, a),
     onState: (cb) => subscribe<RemoteState>(IpcChannels.remoteState, cb)
   },
   caveman: {

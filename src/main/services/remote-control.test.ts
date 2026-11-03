@@ -42,6 +42,15 @@ describe('RemoteControlService', () => {
     const s = svc.getState()
     expect(s.status).toBe('error')
     expect(s.message).toMatch(/Workspace not trusted/)
+    expect(s.needsTrust).toBe(true)
+  })
+
+  it('needsTrust stays false for other failures', () => {
+    const { child, svc } = setup()
+    svc.start({ cwd: 'C:/p' })
+    child.err.emit('data', 'Error: boom\n')
+    child.emit('exit', 1)
+    expect(svc.getState().needsTrust).toBe(false)
   })
 
   it('stop kills the child and goes off', () => {

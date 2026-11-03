@@ -6,6 +6,7 @@ import { RemoteToggle } from './RemoteToggle'
 
 const start = vi.fn()
 const stop = vi.fn()
+const trust = vi.fn()
 let state: RemoteState
 let push: (s: RemoteState) => void = () => {}
 
@@ -23,12 +24,14 @@ beforeEach(() => {
   state = { status: 'off', log: [] }
   useWorkspaceStore.setState({ cwd: 'C:\proj' })
   start.mockImplementation(async () => (state = { status: 'starting', log: [] }))
+  trust.mockResolvedValue({ ok: true })
   stop.mockImplementation(async () => (state = { status: 'off', log: [] }))
   ;(window as unknown as { claudrift: unknown }).claudrift = {
     remote: {
       getState: async () => state,
       start,
       stop,
+      trust,
       onState: (cb: (s: RemoteState) => void) => {
         push = cb
         return () => {}
@@ -56,5 +59,33 @@ describe('RemoteToggle', () => {
     await screen.findByTestId('status-remote')
     act(() => push({ status: 'error', message: 'Workspace not trusted', log: [] }))
     await waitFor(() => expect(screen.getByTestId('status-remote')).toHaveTextContent('ERR'))
+    expect(screen.queryByTestId('trust-dialog')).toBeNull()
+  })
+
+  it('trust dialog: cancel does nothing', async () => {
+    render(<RemoteToggle />)
+    await screen.findByTestId('status-remote')
+    act(() => push({ status: 'error', message: 'Error: Workspace not trusted', needsTrust: true, cwd: 'C:/proj', log: [] }))
+    expect(await screen.findByText('Trust this folder?')).toBeInTheDocument()
+    expect(screen.getByTestId('trust-path')).toHaveTextContent('C:/proj')
+    fireEvent.click(screen.getByText('Cancel'))
+    await waitFor(() => expect(screen.queryByTestId('trust-dialog')).toBeNull())
+    expect(trust).not.toHaveBeenCalled()
+    expect(start).not.toHaveBeenCalled()
+  })
+
+  it('trust dialog: confirm trusts then starts; REMOTE click reopens it', async () => {
+    render(<RemoteToggle />)
+    await screen.findByTestId('status-remote')
+    state = { status: 'error', message: 'Error: Workspace not trusted', needsTrust: true, cwd: 'C:/proj', log: [] }
+    act(() => push(state))
+    fireEvent.click(await screen.findByText('Cancel'))
+    await waitFor(() => expect(screen.queryByTestId('trust-dialog')).toBeNull())
+    fireEvent.click(screen.getByTestId('status-remote'))
+    fireEvent.click(await screen.findByTestId('trust-confirm'))
+    await waitFor(() => expect(start).toHaveBeenCalledWith({ cwd: 'C:/proj' }))
+    expect(trust).toHaveBeenCalledWith({ cwd: 'C:/proj' })
+    expect(trust.mock.invocationCallOrder[0]!).toBeLessThan(start.mock.invocationCallOrder[0]!)
+    expect(stop).not.toHaveBeenCalled()
   })
 })
