@@ -411,6 +411,29 @@ export function reduce(conv: ConvState, e: SessionEvent, now = 0): ConvState {
         items: [...conv.items, { kind: 'error', id: `i${seq}`, message: e.message }]
       }
     }
+    case 'compact': {
+      const last = conv.items[conv.items.length - 1]
+      const open = last?.kind === 'compact' && last.active ? last : undefined
+      if (e.phase === 'start') {
+        if (open) return conv
+        const seq = conv.seq + 1
+        return { ...conv, seq, items: [...conv.items, { kind: 'compact', id: `i${seq}`, active: true }] }
+      }
+      const done: ChatItem =
+        e.phase === 'done'
+          ? {
+              kind: 'compact',
+              id: open?.id ?? `i${conv.seq + 1}`,
+              active: false,
+              trigger: e.trigger,
+              preTokens: e.preTokens,
+              ...(e.postTokens !== undefined ? { postTokens: e.postTokens } : {}),
+              ...(e.durationMs !== undefined ? { durationMs: e.durationMs } : {})
+            }
+          : { kind: 'compact', id: open?.id ?? `i${conv.seq + 1}`, active: false, failed: true }
+      const items = open ? [...conv.items.slice(0, -1), done] : [...conv.items, done]
+      return { ...conv, seq: open ? conv.seq : conv.seq + 1, items }
+    }
     // P3 live-activity events: WP2 implements these (usage, tasks, tool progress). No-ops until then.
     case 'usage_live': {
       const base = startTurn(conv, now).turn!

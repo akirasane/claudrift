@@ -68,6 +68,10 @@ export type SessionEvent =
       modelUsage?: Record<string, Usage & { costUsd: number }>
     }
   | { t: 'error'; message: string }
+  /** Context compaction: `start` while the CLI summarizes, then `done` (or `failed`) with the token counts. */
+  | { t: 'compact'; phase: 'start' }
+  | { t: 'compact'; phase: 'done'; trigger: 'manual' | 'auto'; preTokens: number; postTokens?: number; durationMs?: number }
+  | { t: 'compact'; phase: 'failed'; message?: string }
   /**
    * The turn that just ended was stopped by a subscription usage limit (P4 WP14). Emitted right before that turn's
    * `result`. `resetsAt` = epoch ms of the reset when known (structured rate_limit_event, else parsed from the CLI text);

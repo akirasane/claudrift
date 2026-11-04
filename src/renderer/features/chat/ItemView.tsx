@@ -1,3 +1,4 @@
+import { CompactDivider } from './CompactDivider'
 import * as React from 'react'
 import { useChatStore } from '@/stores/chat-store'
 import { AssistantMessage } from './AssistantMessage'
@@ -36,6 +37,8 @@ export function ItemView({ convId, item, depth = 0 }: { convId: string; item: Ch
       return <AssistantMessage item={item} />
     case 'tool':
       return <ToolItem convId={convId} toolUseId={item.toolUseId} depth={depth} />
+    case 'compact':
+      return <CompactDivider item={item} />
     case 'error':
       return (
         <div

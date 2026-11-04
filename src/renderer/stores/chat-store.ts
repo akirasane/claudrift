@@ -27,6 +27,12 @@ export const isLive = (c: ConvState): boolean => !!c.localId && !c.closed
 export const isIdleConv = (c: ConvState): boolean =>
   !selectIsRunning(c) && c.pending.length === 0 && selectRunningTasks(c).length === 0
 
+export interface QueuedMessage {
+  id: string
+  text: string
+  images?: ImageAttachment[]
+}
+
 interface ChatState {
   convs: Record<string, ConvState>
   /** main-process session handle -> conversation id */
@@ -40,6 +46,12 @@ interface ChatState {
   /** Images attached to the unsent message, per conversation. */
   draftImages: Record<string, ImageAttachment[]>
   setDraftImages: (convId: string, images: ImageAttachment[]) => void
+  /** Messages typed while a turn runs; each is sent when the turn ends, or at once via sendQueuedNow. */
+  queues: Record<string, QueuedMessage[]>
+  enqueue: (convId: string, text: string, images?: ImageAttachment[]) => void
+  removeQueued: (convId: string, id: string) => void
+  /** Move the message to the front and stop the running turn so it goes out now. */
+  sendQueuedNow: (convId: string, id: string) => Promise<void>
   /** Last time each conversation was shown or submitted to (LRU for suspension). */
   lastActive: Record<string, number>
   setDraft: (convId: string, text: string) => void
@@ -227,6 +239,33 @@ export const useChatStore = create<ChatState>((set, get) => {
     drafts: {},
     draftImages: {},
     lastActive: {},
+    queues: {},
+
+    enqueue: (convId, text, images) =>
+      set((s) => ({
+        queues: {
+          ...s.queues,
+          [convId]: [...(s.queues[convId] ?? []), { id: crypto.randomUUID(), text, ...(images?.length ? { images } : {}) }]
+        }
+      })),
+
+    removeQueued: (convId, id) =>
+      set((s) => {
+        const left = (s.queues[convId] ?? []).filter((m) => m.id !== id)
+        const { [convId]: _q, ...rest } = s.queues
+        void _q
+        return { queues: left.length ? { ...rest, [convId]: left } : rest }
+      }),
+
+    sendQueuedNow: async (convId, id) => {
+      const c = get().convs[convId]
+      const list = get().queues[convId] ?? []
+      const m = list.find((x) => x.id === id)
+      if (!c || !m) return
+      set((s) => ({ queues: { ...s.queues, [convId]: [m, ...list.filter((x) => x.id !== id)] } }))
+      if (selectIsRunning(c)) await get().interrupt(convId) // the drain below sends it when the turn ends
+      else drainQueue(convId)
+    },
 
     setDraftImages: (convId, images) =>
       set((s) => {
@@ -313,10 +352,12 @@ export const useChatStore = create<ChatState>((set, get) => {
         const { [convId]: _d, ...drafts } = s.drafts
         const { [convId]: _im, ...draftImages } = s.draftImages
         const { [convId]: _a, ...lastActive } = s.lastActive
+        const { [convId]: _q, ...queues } = s.queues
         void _d
         void _im
         void _a
-        return { convs, localToConv, drafts, draftImages, lastActive }
+        void _q
+        return { convs, localToConv, drafts, draftImages, lastActive, queues }
       }),
 
     seedFromHistory: (convId, events) => patch(convId, (c) => reduceAll(c, events, Date.now())),
@@ -502,6 +543,25 @@ export const useChatStore = create<ChatState>((set, get) => {
         void _drop
         return notice ? { ...rest, notice } : rest
       })
+  }
+})
+
+/** Send the oldest queued message of an idle conversation. A failed turn keeps its queue for the user to review. */
+function drainQueue(convId: string): void {
+  const st = useChatStore.getState()
+  const c = st.convs[convId]
+  const next = st.queues[convId]?.[0]
+  if (!c || !next || selectIsRunning(c) || c.pending.length > 0 || c.status === 'error') return
+  st.removeQueued(convId, next.id)
+  void st.submit(convId, next.text, next.images)
+}
+
+// A turn ended (running -> idle): send the next queued message, in any tab.
+useChatStore.subscribe((s, prev) => {
+  for (const convId of Object.keys(s.queues)) {
+    const was = prev.convs[convId]
+    const now = s.convs[convId]
+    if (was && now && selectIsRunning(was) && !selectIsRunning(now)) drainQueue(convId)
   }
 })
 

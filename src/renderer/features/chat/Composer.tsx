@@ -1,4 +1,4 @@
-import { ArrowUp, Paperclip, Square, X } from 'lucide-react'
+import { ArrowUp, ListPlus, Paperclip, Square, X } from 'lucide-react'
 import * as React from 'react'
 import { Button, Kbd, toast } from '@/components/ui'
 import { setComposerInserter } from '@/lib/composer-bus'
@@ -13,6 +13,7 @@ import { dataUrl, readImages } from './attachments'
 import { applyMention, mentionAt } from './mentions'
 import { routeSlash } from './slash-router'
 import { toggleRemoteWithToast } from '@/features/limits/RemoteToggle'
+import { QueuedMessages } from './QueuedMessages'
 import { AddDirButton, ExtraDirsChips } from './ExtraDirsBar'
 import { selectExtraDirs, useExtraDirs } from '@/stores/extra-dirs-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -192,7 +193,7 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
     }
   }
 
-  const canSend = !disabled && !running && (text.trim().length > 0 || images.length > 0)
+  const canSend = !disabled && (text.trim().length > 0 || images.length > 0)
   const send = (): void => {
     if (!canSend) return
     const value = text.trim()
@@ -207,6 +208,10 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
     const imgs = images
     setText('')
     useChatStore.getState().setDraftImages(convId, [])
+    if (running) {
+      useChatStore.getState().enqueue(convId, value, imgs)
+      return
+    }
     void useChatStore.getState().submit(convId, value, imgs)
   }
   const stop = (): void => {
@@ -229,6 +234,7 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
         {mentionOpen ? (
           <MentionPopup items={mentionItems} activeIndex={mentionActive} onPick={pickMention} onHover={setMentionIdx} />
         ) : null}
+        <QueuedMessages convId={convId} />
         <div
           className="ccw-composer min-h-[var(--composer-min-h)]"
           data-running={running}
@@ -381,7 +387,7 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
             <span className="flex items-center gap-1.5 text-xs text-fg-3">
               {running ? (
                 <>
-                  <Kbd>Esc</Kbd> to interrupt
+                  <Kbd>Esc</Kbd> to interrupt, <Kbd>Enter</Kbd> to queue
                 </>
               ) : (
                 <>
@@ -390,9 +396,16 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
               )}
             </span>
             {running ? (
-              <Button variant="danger" size="icon-md" aria-label="Stop" onClick={stop}>
-                <Square size={12} fill="currentColor" aria-hidden />
-              </Button>
+              <>
+                {canSend && (
+                  <Button variant="secondary" size="icon-md" aria-label="Queue message" onClick={send}>
+                    <ListPlus size={15} aria-hidden />
+                  </Button>
+                )}
+                <Button variant="danger" size="icon-md" aria-label="Stop" onClick={stop}>
+                  <Square size={12} fill="currentColor" aria-hidden />
+                </Button>
+              </>
             ) : (
               <Button variant="primary" size="icon-md" aria-label="Send" disabled={!canSend} onClick={send}>
                 <ArrowUp size={15} aria-hidden />

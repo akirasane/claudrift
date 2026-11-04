@@ -22,6 +22,8 @@ export type ChatItem =
     }
   | { kind: 'tool'; id: string; toolUseId: string; parentToolUseId?: string }
   | { kind: 'error'; id: string; message: string }
+  /** Context compaction marker: `active` while summarizing, then the before / after token counts. */
+  | { kind: 'compact'; id: string; active: boolean; failed?: boolean; trigger?: 'manual' | 'auto'; preTokens?: number; postTokens?: number; durationMs?: number }
 
 export type ToolStatus = 'running' | 'done' | 'error' | 'needs_approval'
 

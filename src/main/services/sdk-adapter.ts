@@ -469,6 +469,20 @@ export function mapMessage(m: SDKMessage, state: MapState): SessionEvent[] {
               }
             : {})
         })
+      } else if (m.subtype === 'status') {
+        const s = m as { status?: string | null; compact_result?: string; compact_error?: string }
+        if (s.status === 'compacting') out.push({ t: 'compact', phase: 'start' })
+        else if (s.compact_result === 'failed') out.push({ t: 'compact', phase: 'failed', ...(s.compact_error ? { message: s.compact_error } : {}) })
+      } else if (m.subtype === 'compact_boundary') {
+        const c = m.compact_metadata
+        out.push({
+          t: 'compact',
+          phase: 'done',
+          trigger: c.trigger,
+          preTokens: c.pre_tokens,
+          ...(c.post_tokens !== undefined ? { postTokens: c.post_tokens } : {}),
+          ...(c.duration_ms !== undefined ? { durationMs: c.duration_ms } : {})
+        })
       } else if ((m.subtype as string) === 'commands_changed') {
         const list = normalizeCommands((m as unknown as { commands?: unknown }).commands)
         if (list) out.push({ t: 'commands', commands: list })
