@@ -88,6 +88,10 @@ export type HistoryListArgs = z.infer<typeof HistoryListSchema>
 
 export const HistoryLoadSchema = z.object({ sessionId: z.string().min(1), cwd: z.string().optional() })
 export type HistoryLoadArgs = z.infer<typeof HistoryLoadSchema>
+export const HistoryDeleteSchema = z.object({ sessionId: z.string().min(1), cwd: z.string().optional() })
+export const HistoryRenameSchema = z.object({ sessionId: z.string().min(1), title: z.string().trim().min(1).max(200), cwd: z.string().optional() })
+export const HistorySummarizeSchema = z.object({ sessionId: z.string().min(1), cwd: z.string().min(1) })
+export const HistorySaveSummarySchema = z.object({ cwd: z.string().min(1), title: z.string().min(1).max(200), summary: z.string().min(1).max(20000) })
 
 // ---- P2: config / settings ----
 export const SettingsScopeSchema = z.enum(['user', 'project', 'local'])
@@ -439,6 +443,13 @@ export interface ClaudriftApi {
     list(args: HistoryListArgs): Promise<HistorySessionInfo[]>
     /** Replayable events (user_message, assistant_message, tool_use, tool_result...) for a past session. */
     load(args: HistoryLoadArgs): Promise<SessionEvent[]>
+    /** Permanently deletes the session transcript. */
+    delete(args: z.infer<typeof HistoryDeleteSchema>): Promise<void>
+    rename(args: z.infer<typeof HistoryRenameSchema>): Promise<void>
+    /** Model-written memory bullets for the session (one model call). */
+    summarize(args: z.infer<typeof HistorySummarizeSchema>): Promise<string>
+    /** Appends the summary to the project's CLAUDE.md; resolves to the file path. */
+    saveSummary(args: z.infer<typeof HistorySaveSummarySchema>): Promise<string>
   }
   app: {
     info(): Promise<AppInfo>

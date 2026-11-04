@@ -40,7 +40,11 @@ const api: ClaudriftApi = {
   history: {
     listProjects: () => ipcRenderer.invoke(IpcChannels.historyListProjects),
     list: (args) => ipcRenderer.invoke(IpcChannels.historyList, args),
-    load: (args) => ipcRenderer.invoke(IpcChannels.historyLoad, args)
+    load: (args) => ipcRenderer.invoke(IpcChannels.historyLoad, args),
+    delete: (args) => ipcRenderer.invoke(IpcChannels.historyDelete, args),
+    rename: (args) => ipcRenderer.invoke(IpcChannels.historyRename, args),
+    summarize: (args) => ipcRenderer.invoke(IpcChannels.historySummarize, args),
+    saveSummary: (args) => ipcRenderer.invoke(IpcChannels.historySaveSummary, args)
   },
   app: {
     info: () => ipcRenderer.invoke(IpcChannels.appInfo),

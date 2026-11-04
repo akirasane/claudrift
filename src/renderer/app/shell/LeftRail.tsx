@@ -39,7 +39,7 @@ export function LeftRail({ disabled }: { disabled?: boolean }): React.JSX.Elemen
   return (
     <aside data-testid="left-rail" className="flex w-[232px] shrink-0 flex-col border-r border-border bg-bg-1">
       <ProjectPicker />
-      <nav aria-label="Main" className="flex flex-col gap-0.5 px-2 pb-1">
+      <nav aria-label="Main" className="grid grid-cols-2 gap-0.5 px-2 pb-2">
         <NavRow view="chat" label="Sessions" icon={MessagesSquare} />
         <NavRow view="mcp" label="MCP" icon={Plug} />
         <NavRow view="plugins" label="Plugins" icon={Blocks} />

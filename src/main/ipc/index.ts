@@ -11,6 +11,8 @@ import type { PluginRegistry } from '../services/plugin-registry'
 import { registerGitIpc } from './git'
 import { registerFilesIpc } from './files'
 import { registerHistoryIpc } from './history'
+import { HistoryService } from '../services/history-service'
+import { resolveClaudeExecutable } from '../paths'
 import { registerItemsIpc } from './items'
 import { registerMcpIpc } from './mcp'
 import { registerPluginsIpc } from './plugins'
@@ -60,7 +62,7 @@ export interface IpcDeps {
 export function registerIpc(deps: IpcDeps): Disposer {
   return combineDisposers(
     registerSessionIpc(deps.manager),
-    registerHistoryIpc(),
+    registerHistoryIpc(new HistoryService({ claudePath: resolveClaudeExecutable })),
     registerAppIpc({ auth: deps.auth, setActiveSession: deps.setActiveSession }),
     registerPrefsIpc({ prefs: deps.prefs, hotkey: deps.hotkey, send: deps.send }),
     registerUsageIpc(deps.usage),

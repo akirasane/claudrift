@@ -30,6 +30,8 @@ export interface RawSessionMessage {
 export interface HistoryApi {
   listSessions(opts?: { dir?: string; includeWorktrees?: boolean }): Promise<RawSessionInfo[]>
   getSessionMessages(sessionId: string, opts?: { dir?: string }): Promise<RawSessionMessage[]>
+  deleteSession(sessionId: string, opts?: { dir?: string }): Promise<void>
+  renameSession(sessionId: string, title: string, opts?: { dir?: string }): Promise<void>
 }
 
 /** The real SDK-backed implementation. */
@@ -37,7 +39,9 @@ export async function loadSdkHistory(): Promise<HistoryApi> {
   const sdk = await import('@anthropic-ai/claude-agent-sdk')
   return {
     listSessions: (opts) => sdk.listSessions(opts) as Promise<RawSessionInfo[]>,
-    getSessionMessages: (id, opts) => sdk.getSessionMessages(id, opts) as Promise<RawSessionMessage[]>
+    getSessionMessages: (id, opts) => sdk.getSessionMessages(id, opts) as Promise<RawSessionMessage[]>,
+    deleteSession: (id, opts) => sdk.deleteSession(id, opts),
+    renameSession: (id, title, opts) => sdk.renameSession(id, title, opts)
   }
 }
 
