@@ -1,13 +1,13 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import type { HistorySessionInfo } from '@shared/events'
 import { DeleteSessionDialog } from './DeleteSessionDialog'
 
 const session: HistorySessionInfo = { sessionId: 's1', title: 'Fix login', cwd: 'C:\proj', lastModified: 1 }
 let history: { delete: ReturnType<typeof vi.fn>; summarize: ReturnType<typeof vi.fn>; saveSummary: ReturnType<typeof vi.fn> }
-let onDeleted: ReturnType<typeof vi.fn>
-let onClose: ReturnType<typeof vi.fn>
+let onDeleted: Mock<(s: HistorySessionInfo) => void>
+let onClose: Mock<() => void>
 
 beforeEach(() => {
   history = {
@@ -16,8 +16,8 @@ beforeEach(() => {
     saveSummary: vi.fn(async () => 'C:\proj\CLAUDE.md')
   }
   ;(window as unknown as { claudrift: unknown }).claudrift = { history }
-  onDeleted = vi.fn()
-  onClose = vi.fn()
+  onDeleted = vi.fn<(s: HistorySessionInfo) => void>()
+  onClose = vi.fn<() => void>()
   render(<DeleteSessionDialog session={session} onClose={onClose} onDeleted={onDeleted} />)
 })
 afterEach(cleanup)

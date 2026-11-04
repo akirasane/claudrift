@@ -23,7 +23,9 @@ function fakeApi(opts: { dirBroken?: boolean } = {}): HistoryApi & { calls: unkn
     async getSessionMessages(id, o) {
       calls.push({ id, ...o })
       return id === 's-a1' ? (messages as RawSessionMessage[]) : []
-    }
+    },
+    async deleteSession() {},
+    async renameSession() {}
   }
 }
 
