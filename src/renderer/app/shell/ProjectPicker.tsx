@@ -1,5 +1,5 @@
 import { ChevronDown, FolderOpen, FolderPlus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Tooltip } from '@/components/ui'
 import { useProjects } from '@/features/sessions/queries'
 import { cn } from '@/lib/cn'
@@ -31,9 +31,27 @@ export function ProjectPicker(): React.JSX.Element {
   const select = useWorkspaceStore((s) => s.selectProject)
   const addFolder = useWorkspaceStore((s) => s.addFolder)
   const { projects, isLoading, error } = useProjectList()
+  const root = useRef<HTMLDivElement>(null)
+
+  // Floating menu: close on an outside click or Escape.
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (root.current && !root.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
   return (
-    <div className="border-b border-border p-2" data-testid="project-picker">
+    <div ref={root} className="relative z-30 border-b border-border p-2" data-testid="project-picker">
       <button
         type="button"
         aria-expanded={open}
@@ -52,7 +70,11 @@ export function ProjectPicker(): React.JSX.Element {
         />
       </button>
       {open && (
-        <div role="listbox" aria-label="Projects" className="mt-1 flex max-h-72 flex-col gap-0.5 overflow-y-auto">
+        <div
+          role="listbox"
+          aria-label="Projects"
+          className="ccw-toast-in absolute inset-x-2 top-full z-40 mt-1 flex max-h-[min(22rem,70vh)] flex-col gap-0.5 overflow-y-auto rounded-md border border-border-strong bg-bg-1 p-1 shadow-lg"
+        >
           {isLoading && <p className="px-2 py-1 text-sm text-fg-3">Loading projects...</p>}
           {!isLoading && error != null && <p className="px-2 py-1 text-sm text-danger">Could not load projects</p>}
           {projects.map((p) => {
