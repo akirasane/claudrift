@@ -54,7 +54,7 @@ export class RemoteControlService {
     const args = ['remote-control']
     if (a.name) args.push('--name', a.name)
     if (a.permissionMode) args.push('--permission-mode', a.permissionMode)
-    this.state = { status: 'starting', name: a.name, cwd: a.cwd, log: [], needsTrust: false }
+    this.state = { status: 'starting', name: a.name, cwd: a.cwd, startedAt: Date.now(), log: [], needsTrust: false }
     let child: ChildProcess
     try {
       child = this.spawnFn(exe, args, { cwd: a.cwd })

@@ -4,6 +4,7 @@ import { EMPTY_REMOTE, type RemoteState } from '@shared/remote'
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast, Tooltip } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { useRemoteMirror } from './remote-mirror'
 
 /** Latest Remote Control state pushed by main. */
 export function useRemoteState(): RemoteState {
@@ -65,6 +66,7 @@ export async function toggleRemoteWithToast(name?: string): Promise<void> {
 /** Status bar switch that runs `claude remote-control` in the active project. */
 export function RemoteToggle(): React.JSX.Element {
   const s = useRemoteState()
+  useRemoteMirror(s)
   const active = s.status === 'on' || s.status === 'starting'
   const [trustOpen, setTrustOpen] = React.useState(false)
   const [nameOpen, setNameOpen] = React.useState(false)

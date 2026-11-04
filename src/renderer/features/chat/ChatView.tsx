@@ -60,6 +60,7 @@ export function ChatView({ target }: { target: ChatTarget }): React.JSX.Element 
   }, [convId, target])
   const cwdExists = useCwdExists(target.cwd)
   const missing = cwdExists === false
+  const mirror = useChatStore((s) => s.convs[convId]?.mirror === true)
 
   return (
     <div
@@ -76,8 +77,12 @@ export function ChatView({ target }: { target: ChatTarget }): React.JSX.Element 
       {has && <AutoResumeBanner convId={convId} />}
       <Composer
         convId={convId}
-        disabled={missing}
-        {...(missing ? { disabledReason: 'This project folder no longer exists.' } : {})}
+        disabled={missing || mirror}
+        {...(missing
+          ? { disabledReason: 'This project folder no longer exists.' }
+          : mirror
+            ? { disabledReason: 'Remote Control mirror (read-only). Reply from claude.ai/code or the phone app.' }
+            : {})}
       />
       <PermissionDialog convId={convId} />
     </div>

@@ -68,6 +68,11 @@ interface WorkspaceState {
   /** Activate the session's tab if it is open, else open a history tab (transcript loads on first show). */
   openSession: (s: HistorySessionInfo) => Promise<void>
   addFolder: () => Promise<void>
+  /**
+   * Show a Remote Control session as a read-only tab and refresh it from its transcript. Does not take focus.
+   * Returns true when the tab is new.
+   */
+  mirrorSession: (s: HistorySessionInfo) => Promise<boolean>
   // ---- Tabs (P4 D2) ----
   tabs: TabRef[]
   /** Conversations that finished a turn while their tab was in the background. */
@@ -198,6 +203,26 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => {
     }
   }
 
+  const doMirror = async (s: HistorySessionInfo): Promise<boolean> => {
+    const chat = useChatStore.getState()
+    const convId = `remote-${s.sessionId}`
+    const isNew = !chat.convs[convId]
+    if (isNew) {
+      chat.createConv({ convId, cwd: s.cwd })
+      chat.reseedMirror(convId, []) // read-only from the first frame
+      loaded.add(convId)
+    }
+    if (!get().tabs.some((t) => t.convId === convId)) addTab(convId, s.cwd, { sessionId: s.sessionId, title: `Remote: ${s.title}` })
+    try {
+      const events = await window.claudrift.history.load({ sessionId: s.sessionId, cwd: s.cwd })
+      useChatStore.getState().reseedMirror(convId, events)
+      if (get().activeConvId !== convId) set((st) => ({ unread: { ...st.unread, [convId]: true } }))
+    } catch {
+      /* transcript not readable yet: the next poll retries */
+    }
+    return isNew
+  }
+
   const doClose = async (convId: string): Promise<void> => {
     const { tabs, activeConvId, view } = get()
     const idx = tabs.findIndex((t) => t.convId === convId)
@@ -235,6 +260,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => {
     loadingSession: false,
     tabs: [],
     unread: {},
+
+    mirrorSession: doMirror,
 
     selectProject: (cwd) => {
       const go = (): void => {

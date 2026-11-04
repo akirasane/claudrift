@@ -51,6 +51,8 @@ interface ChatState {
   createConv: (target: ChatTarget) => void
   removeConv: (convId: string) => void
   seedFromHistory: (convId: string, events: SessionEvent[]) => void
+  /** Replace the transcript with a fresh replay (a Remote Control mirror refreshing). Marks the conversation as a mirror. */
+  reseedMirror: (convId: string, events: SessionEvent[]) => void
   bindLocalId: (convId: string, localId: string) => void
   applyEvent: (localId: string, e: SessionEvent) => void
   submit: (convId: string, text: string, images?: ImageAttachment[]) => Promise<void>
@@ -318,6 +320,15 @@ export const useChatStore = create<ChatState>((set, get) => {
       }),
 
     seedFromHistory: (convId, events) => patch(convId, (c) => reduceAll(c, events, Date.now())),
+
+    reseedMirror: (convId, events) =>
+      patch(convId, (c) =>
+        reduceAll(
+          { ...c, mirror: true, items: [], tools: {}, pending: [], tasks: {}, session: { workMs: 0, apiMs: 0, turns: 0 } },
+          events,
+          Date.now()
+        )
+      ),
 
     bindLocalId: (convId, localId) => {
       set((s) => {

@@ -144,6 +144,8 @@ export interface ConvState {
   limit?: { resetsAt?: number; limitType?: string; at: number }
   /** Inline notice above the stream (e.g. truncated history). */
   notice?: string
+  /** Read-only mirror of a Remote Control session driven from claude.ai or the phone app. */
+  mirror?: true
   /** Monotonic counter for item ids; keeps the reducer pure. */
   seq: number
 }

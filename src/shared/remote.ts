@@ -7,6 +7,8 @@ export interface RemoteState {
   url?: string
   name?: string
   cwd?: string
+  /** Epoch ms when this run started; the app mirrors sessions in `cwd` modified after it. */
+  startedAt?: number
   message?: string
   /** The CLI refused to start because the folder is not trusted by Claude Code. */
   needsTrust?: boolean
