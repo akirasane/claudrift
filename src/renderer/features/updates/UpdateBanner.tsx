@@ -1,6 +1,6 @@
 import { Download, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui'
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui'
 import { selectIsRunning } from '@/features/chat/model/selectors'
 import { useChatStore } from '@/stores/chat-store'
 import { useUpdateState } from './use-update-state'
@@ -15,10 +15,16 @@ function readDismissed(): string | null {
   }
 }
 
-/** Non-modal strip under the title bar: download progress, then a Restart button. Dismissible per version. */
+/**
+ * Update notice. While downloading it is a strip under the title bar. When the update is ready it opens as a
+ * modal in the middle of the app; collapsing the modal ("Later" or the close button) drops back to the strip,
+ * which keeps the Restart button. Dismissing the strip hides the notice for that version.
+ */
 export function UpdateBanner(): React.JSX.Element | null {
   const state = useUpdateState()
   const [dismissed, setDismissed] = useState<string | null>(readDismissed)
+  /** Version whose modal the user collapsed this run. A newer version opens the modal again. */
+  const [collapsedFor, setCollapsedFor] = useState<string | null>(null)
   const busy = useChatStore((s) => Object.values(s.convs).some((c) => selectIsRunning(c)))
   const [installing, setInstalling] = useState(false)
 
@@ -40,6 +46,30 @@ export function UpdateBanner(): React.JSX.Element | null {
   const install = (): void => {
     setInstalling(true)
     void window.claudrift.update.install().catch(() => setInstalling(false))
+  }
+  const runningNote = busy ? 'Sessions are running; you will be asked before they stop.' : ''
+
+  if (state.kind === 'ready' && collapsedFor !== state.version) {
+    return (
+      <Dialog open onOpenChange={(open) => !open && setCollapsedFor(state.version)}>
+        <DialogContent data-testid="update-modal">
+          <DialogHeader>
+            <DialogTitle>Update v{state.version} is ready</DialogTitle>
+            <DialogDescription>
+              Restart Claudrift to finish installing it. {runningNote} Choose Later to keep working; the update stays in the bar at the top.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" data-testid="update-modal-later" onClick={() => setCollapsedFor(state.version)}>
+              Later
+            </Button>
+            <Button variant="primary" disabled={installing} onClick={install} data-testid="update-banner-install">
+              Restart to update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   const text =
