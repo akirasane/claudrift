@@ -15,7 +15,7 @@ export function UserMessage({
   return (
     <div
       data-testid="user-message"
-      className="group relative rounded-md border border-border bg-bg-2 px-3.5 py-2.5 text-md leading-[1.6] text-fg shadow-[var(--highlight-inset)]"
+      className="group relative rounded-md border border-l-[3px] border-accent-from/30 border-l-accent-from bg-accent-tint px-3.5 py-2.5 text-md leading-[1.6] text-fg shadow-[var(--highlight-inset)]"
     >
       {images?.length ? (
         <div className="mb-2 flex flex-wrap gap-2" data-testid="user-images">
