@@ -21,6 +21,20 @@ describe('saverOptions', () => {
     expect(only('model')).toEqual({ model: 'haiku', effort: 'low', disableThinking: true })
     expect(only('compact')).toEqual({ autoCompactWindow: 100_000 })
   })
+  it('custom config flows into each part', () => {
+    expect(
+      saverOptions({
+        ultraSaver: true,
+        ultraSaverParts: DEFAULT_SAVER_PARTS,
+        ultraSaverConfig: { cavemanMode: 'lite', model: 'sonnet', effort: 'medium', disableThinking: false, compactTokens: 150_000 }
+      })
+    ).toEqual({
+      env: { CAVEMAN_DEFAULT_MODE: 'lite' },
+      model: 'sonnet',
+      effort: 'medium',
+      autoCompactWindow: 150_000
+    })
+  })
   it('on with every part off changes nothing', () => {
     expect(saverOptions({ ultraSaver: true, ultraSaverParts: { caveman: false, model: false, compact: false } })).toBeUndefined()
   })

@@ -1,4 +1,4 @@
-import { DEFAULT_SAVER_PARTS, type SaverParts } from './saver'
+import { DEFAULT_SAVER_CONFIG, DEFAULT_SAVER_PARTS, type SaverConfig, type SaverParts } from './saver'
 // P4 app-level contracts (prefs, auth status). Zod-free so the sandboxed preload can bundle it.
 
 export interface NotificationPrefs {
@@ -40,6 +40,8 @@ export interface AppPrefs {
   /** Ultra token-saver mode for new sessions (see shared/saver.ts). */
   ultraSaver: boolean
   ultraSaverParts: SaverParts
+  /** What each saver part does (reply style, model, effort, thinking, compaction size). */
+  ultraSaverConfig: SaverConfig
 }
 
 export const DEFAULT_PREFS: AppPrefs = {
@@ -62,7 +64,8 @@ export const DEFAULT_PREFS: AppPrefs = {
   claudeInChrome: false,
   toolCardsExpanded: false,
   ultraSaver: false,
-  ultraSaverParts: { ...DEFAULT_SAVER_PARTS }
+  ultraSaverParts: { ...DEFAULT_SAVER_PARTS },
+  ultraSaverConfig: { ...DEFAULT_SAVER_CONFIG }
 }
 
 export type AppPrefsPatch = {
@@ -78,6 +81,7 @@ export type AppPrefsPatch = {
   toolCardsExpanded?: boolean
   ultraSaver?: boolean
   ultraSaverParts?: Partial<SaverParts>
+  ultraSaverConfig?: Partial<SaverConfig>
 }
 
 /** Renderer -> main (fire-and-forget): drives the pause/resume native notifications and the keep-awake lock. */

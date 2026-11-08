@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { DEFAULT_PREFS } from '../../shared/app'
 import type { AppPrefs, AppPrefsPatch } from '../../shared/app'
 import { AppPrefsPatchSchema } from '../../shared/ipc'
+import { SAVER_CAVEMAN_MODES, SAVER_COMPACT_MAX, SAVER_COMPACT_MIN, SAVER_EFFORTS } from '../../shared/saver'
 import { writeFileAtomic } from './atomic-write'
 
 /** What a prefs.json may contain: every field optional (merged over the defaults), unknown keys ignored. */
@@ -32,7 +33,17 @@ const PrefsFileSchema = z.object({
   claudeInChrome: z.boolean().optional(),
   toolCardsExpanded: z.boolean().optional(),
   ultraSaver: z.boolean().optional(),
-  ultraSaverParts: z.object({ caveman: z.boolean(), model: z.boolean(), compact: z.boolean() }).partial().optional()
+  ultraSaverParts: z.object({ caveman: z.boolean(), model: z.boolean(), compact: z.boolean() }).partial().optional(),
+  ultraSaverConfig: z
+    .object({
+      cavemanMode: z.enum(SAVER_CAVEMAN_MODES),
+      model: z.string().trim().min(1).max(100),
+      effort: z.enum(SAVER_EFFORTS),
+      disableThinking: z.boolean(),
+      compactTokens: z.number().int().min(SAVER_COMPACT_MIN).max(SAVER_COMPACT_MAX)
+    })
+    .partial()
+    .optional()
 })
 
 function clean<T extends object>(o: T | undefined): Partial<T> {
@@ -55,7 +66,8 @@ export function mergePrefs(base: AppPrefs, patch: AppPrefsPatch): AppPrefs {
     claudeInChrome: patch.claudeInChrome ?? base.claudeInChrome,
     toolCardsExpanded: patch.toolCardsExpanded ?? base.toolCardsExpanded,
     ultraSaver: patch.ultraSaver ?? base.ultraSaver,
-    ultraSaverParts: { ...base.ultraSaverParts, ...clean(patch.ultraSaverParts) }
+    ultraSaverParts: { ...base.ultraSaverParts, ...clean(patch.ultraSaverParts) },
+    ultraSaverConfig: { ...base.ultraSaverConfig, ...clean(patch.ultraSaverConfig) }
   }
 }
 

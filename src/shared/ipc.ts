@@ -28,6 +28,7 @@ import type { PluginsBrowseResult, PluginsListResult, PluginsMutationResult } fr
 import type { RemoteState } from './remote'
 import type { UsageQuery, UsageSummary } from './usage'
 import { PermissionModeSchema } from './permission-mode'
+import { SAVER_CAVEMAN_MODES, SAVER_COMPACT_MAX, SAVER_COMPACT_MIN, SAVER_EFFORTS } from './saver'
 import type { PermissionMode } from './permission-mode'
 
 export { PermissionModeSchema }
@@ -302,7 +303,17 @@ export const AppPrefsPatchSchema = z
     claudeInChrome: Flag,
     toolCardsExpanded: Flag,
     ultraSaver: Flag,
-    ultraSaverParts: z.object({ caveman: Flag, model: Flag, compact: Flag }).partial().strict()
+    ultraSaverParts: z.object({ caveman: Flag, model: Flag, compact: Flag }).partial().strict(),
+    ultraSaverConfig: z
+      .object({
+        cavemanMode: z.enum(SAVER_CAVEMAN_MODES),
+        model: z.string().trim().min(1).max(100),
+        effort: z.enum(SAVER_EFFORTS),
+        disableThinking: Flag,
+        compactTokens: z.number().int().min(SAVER_COMPACT_MIN).max(SAVER_COMPACT_MAX)
+      })
+      .partial()
+      .strict()
   })
   .partial()
   .strict()

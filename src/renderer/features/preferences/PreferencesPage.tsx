@@ -10,6 +10,14 @@ import { cn } from '@/lib/cn'
 import { AutoResumeCard } from '@/features/autoresume/AutoResumeCard'
 import { useTerminalStore } from '@/features/terminal/terminal-store'
 import { describeUpdate, useUpdateState } from '@/features/updates/use-update-state'
+import {
+  SAVER_CAVEMAN_MODES,
+  SAVER_COMPACT_MAX,
+  SAVER_COMPACT_MIN,
+  SAVER_EFFORTS,
+  SAVER_MODELS,
+  type SaverConfig
+} from '@shared/saver'
 import { acceleratorFromEvent } from './accelerator'
 import { ClaudeCliSection } from './ClaudeCliSection'
 
@@ -135,6 +143,120 @@ function AcceleratorInput({
         </span>
       )}
     </div>
+  )
+}
+
+const MODEL_CUSTOM = '__custom'
+
+/** Fine-tuning for each saver part. Each control is enabled only when the saver and its part are on. */
+function SaverTuning({ prefs, set }: { prefs: AppPrefs; set: (p: AppPrefsPatch) => Promise<void> }): React.JSX.Element {
+  const c = prefs.ultraSaverConfig
+  const on = prefs.ultraSaver
+  const parts = prefs.ultraSaverParts
+  const known = (SAVER_MODELS as readonly string[]).includes(c.model)
+  const [custom, setCustom] = React.useState(known ? '' : c.model)
+  const [compactText, setCompactText] = React.useState(String(Math.round(c.compactTokens / 1000)))
+  React.useEffect(() => setCompactText(String(Math.round(c.compactTokens / 1000))), [c.compactTokens])
+  const patch = (p: Partial<SaverConfig>): void => void set({ ultraSaverConfig: p })
+  const commitCompact = (): void => {
+    const n = Math.round(Number(compactText))
+    if (!Number.isFinite(n)) return setCompactText(String(Math.round(c.compactTokens / 1000)))
+    const tokens = Math.min(SAVER_COMPACT_MAX, Math.max(SAVER_COMPACT_MIN, n * 1000))
+    setCompactText(String(Math.round(tokens / 1000)))
+    if (tokens !== c.compactTokens) patch({ compactTokens: tokens })
+  }
+  const sel = 'h-[30px] w-40'
+  return (
+    <>
+      <Row label="Reply style" hint="How terse the caveman plugin makes replies. Ultra is shortest." htmlFor="saver-caveman-mode">
+        <select
+          id="saver-caveman-mode"
+          data-testid="saver-caveman-mode"
+          value={c.cavemanMode}
+          disabled={!on || !parts.caveman}
+          className={cn(fieldClass, sel)}
+          onChange={(e) => patch({ cavemanMode: e.target.value as SaverConfig['cavemanMode'] })}
+        >
+          {SAVER_CAVEMAN_MODES.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </Row>
+      <Row label="Model" hint="Used by new chats that have no model of their own. Pick Custom for a full model id." htmlFor="saver-model-select">
+        <div className="flex flex-col items-end gap-1">
+          <select
+            id="saver-model-select"
+            data-testid="saver-model-select"
+            value={known ? c.model : MODEL_CUSTOM}
+            disabled={!on || !parts.model}
+            className={cn(fieldClass, sel)}
+            onChange={(e) => {
+              if (e.target.value === MODEL_CUSTOM) setCustom(known ? '' : c.model)
+              else patch({ model: e.target.value })
+            }}
+          >
+            {SAVER_MODELS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+            <option value={MODEL_CUSTOM}>Custom...</option>
+          </select>
+          {!known && (
+            <Input
+              mono
+              aria-label="Custom model id"
+              data-testid="saver-model-custom"
+              disabled={!on || !parts.model}
+              value={custom}
+              className="h-[30px] w-40"
+              onChange={(e) => setCustom(e.target.value)}
+              onBlur={() => custom.trim() && custom.trim() !== c.model && patch({ model: custom.trim() })}
+            />
+          )}
+        </div>
+      </Row>
+      <Row label="Effort" hint="Lower is cheaper and faster, higher thinks harder." htmlFor="saver-effort">
+        <select
+          id="saver-effort"
+          data-testid="saver-effort"
+          value={c.effort}
+          disabled={!on || !parts.model}
+          className={cn(fieldClass, sel)}
+          onChange={(e) => patch({ effort: e.target.value as SaverConfig['effort'] })}
+        >
+          {SAVER_EFFORTS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </Row>
+      <Row label="Turn off extended thinking" hint="Thinking tokens are billed as output." htmlFor="saver-no-thinking">
+        <Toggle
+          id="saver-no-thinking"
+          checked={c.disableThinking}
+          disabled={!on || !parts.model}
+          data-testid="saver-no-thinking"
+          onCheckedChange={(v) => patch({ disableThinking: v })}
+        />
+      </Row>
+      <Row label="Compact at (thousand tokens)" hint="20 to 1000. Lower compacts sooner and keeps chats cheaper." htmlFor="saver-compact-at">
+        <Input
+          id="saver-compact-at"
+          data-testid="saver-compact-at"
+          inputMode="numeric"
+          disabled={!on || !parts.compact}
+          value={compactText}
+          className="h-[30px] w-24 text-right"
+          onChange={(e) => setCompactText(e.target.value.replace(/[^\d]/g, ''))}
+          onBlur={commitCompact}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        />
+      </Row>
+    </>
   )
 }
 
@@ -445,9 +567,9 @@ export function PreferencesPage(): React.JSX.Element {
               </Row>
               {(
                 [
-                  ['caveman', 'Terse replies (caveman ultra)', 'Needs the caveman plugin. Sets its mode to ultra for the session; replies are about half as long.'],
-                  ['model', 'Cheaper model, low effort, no extended thinking', 'New chats start on Haiku unless you pick a model for that chat. Weaker on hard tasks.'],
-                  ['compact', 'Compact early (100k tokens)', 'Summarizes old turns sooner so long chats stop re-sending a huge history.']
+                  ['caveman', 'Terse replies (caveman ultra)', 'Needs the caveman plugin. Sets its mode for the session (choose the style below).'],
+                  ['model', 'Cheaper model, low effort, no extended thinking', 'New chats use the model, effort and thinking choices below unless you pick a model for that chat.'],
+                  ['compact', 'Compact early', 'Summarizes old turns sooner so long chats stop re-sending a huge history.']
                 ] as const
               ).map(([key, label, hint]) => (
                 <Row key={key} label={label} hint={hint} htmlFor={`saver-${key}`}>
@@ -460,6 +582,7 @@ export function PreferencesPage(): React.JSX.Element {
                   />
                 </Row>
               ))}
+              <SaverTuning prefs={prefs} set={set} />
             </Section>
             <Section id="chat" title="Conversation">
               <Row
