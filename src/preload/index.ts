@@ -4,6 +4,7 @@ import type { FsChangedPayload, PtyDataPayload, PtyExitPayload } from '../shared
 import type { AppPrefs, UpdateState } from '../shared/app'
 import type { CavemanState, LimitsState } from '../shared/limits'
 import type { RemoteState } from '../shared/remote'
+import type { ScheduledTask } from '../shared/schedule'
 import type { ClaudriftApi, SessionEventPayload } from '../shared/ipc'
 
 function subscribe<T>(channel: string, cb: (p: T) => void): () => void {
@@ -74,6 +75,14 @@ const api: ClaudriftApi = {
     stop: () => ipcRenderer.invoke(IpcChannels.remoteStop),
     trust: (a) => ipcRenderer.invoke(IpcChannels.remoteTrust, a),
     onState: (cb) => subscribe<RemoteState>(IpcChannels.remoteState, cb)
+  },
+  schedule: {
+    list: () => ipcRenderer.invoke(IpcChannels.scheduleList),
+    save: (input) => ipcRenderer.invoke(IpcChannels.scheduleSave, input),
+    remove: (id) => ipcRenderer.invoke(IpcChannels.scheduleDelete, { id }),
+    setEnabled: (id, enabled) => ipcRenderer.invoke(IpcChannels.scheduleEnable, { id, enabled }),
+    run: (id) => ipcRenderer.invoke(IpcChannels.scheduleRun, { id }),
+    onState: (cb) => subscribe<ScheduledTask[]>(IpcChannels.scheduleState, cb)
   },
   claudeCli: {
     status: (a) => ipcRenderer.invoke(IpcChannels.claudeCliStatus, a ?? {}),

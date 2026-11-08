@@ -33,6 +33,7 @@ const AgentsPage = lazy(() => import('@/features/items/AgentsPage').then((m) => 
 const HooksPage = lazy(() => import('@/features/hooks/HooksPage').then((m) => ({ default: m.HooksPage })))
 const UsagePage = lazy(() => import('@/features/usage/UsagePage').then((m) => ({ default: m.UsagePage })))
 const GitPage = lazy(() => import('@/features/git/GitPage').then((m) => ({ default: m.GitPage })))
+const SchedulePage = lazy(() => import('@/features/schedule/SchedulePage').then((m) => ({ default: m.SchedulePage })))
 const PreferencesPage = lazy(() =>
   import('@/features/preferences/PreferencesPage').then((m) => ({ default: m.PreferencesPage }))
 )
@@ -177,6 +178,7 @@ function Shell(): React.JSX.Element {
                 {view === 'hooks' && <HooksPage cwd={cwd} />}
                 {view === 'usage' && <UsagePage cwd={cwd} />}
                 {view === 'git' && <GitPage cwd={cwd} />}
+                {view === 'schedule' && <SchedulePage cwd={cwd} />}
                 {view === 'preferences' && <PreferencesPage />}
               </Suspense>
             )}

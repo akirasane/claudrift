@@ -26,6 +26,7 @@ import type { CavemanState, LimitsState } from './limits'
 import type { ClaudeCliStatus, ClaudeCliUpdateResult } from './claude-cli'
 import type { PluginsBrowseResult, PluginsListResult, PluginsMutationResult } from './plugins'
 import type { RemoteState } from './remote'
+import type { ScheduleInput, ScheduledTask } from './schedule'
 import type { UsageQuery, UsageSummary } from './usage'
 import { PermissionModeSchema } from './permission-mode'
 import { SAVER_CAVEMAN_MODES, SAVER_COMPACT_MAX, SAVER_COMPACT_MIN, SAVER_EFFORTS } from './saver'
@@ -493,6 +494,14 @@ export interface ClaudriftApi {
     stop(): Promise<RemoteState>
     trust(a: { cwd: string }): Promise<{ ok: boolean; message?: string }>
     onState(cb: (s: RemoteState) => void): () => void
+  }
+  schedule: {
+    list(): Promise<ScheduledTask[]>
+    save(input: ScheduleInput): Promise<ScheduledTask>
+    remove(id: string): Promise<boolean>
+    setEnabled(id: string, enabled: boolean): Promise<ScheduledTask | undefined>
+    run(id: string): Promise<boolean>
+    onState(cb: (tasks: ScheduledTask[]) => void): () => void
   }
   claudeCli: {
     status(a?: { refresh?: boolean }): Promise<ClaudeCliStatus>

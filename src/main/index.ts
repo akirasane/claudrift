@@ -1,12 +1,12 @@
 import { autoUpdater } from 'electron-updater'
-import { app, BrowserWindow, Menu, powerSaveBlocker, screen, shell } from 'electron'
+import { app, BrowserWindow, Menu, Notification, powerSaveBlocker, screen, shell } from 'electron'
 import { join } from 'node:path'
 import { IpcChannels } from '../shared/ipc'
 import type { SessionEventPayload } from '../shared/ipc'
 import { registerIpc } from './ipc'
 import type { Disposer } from './ipc/dispose'
 import { isAppNavigation } from './navigation'
-import { claudeConfigDir, limitsPath, readSdkVersions, resetClaudeBinaryCache, resolveClaudeBinary, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
+import { claudeConfigDir, limitsPath, readSdkVersions, schedulePath, resetClaudeBinaryCache, resolveClaudeBinary, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
 import { AutoResumeMain } from './services/autoresume-main'
 import { AuthStatusService } from './services/auth-status'
 import { runClaude } from './services/claude-cli'
@@ -17,6 +17,8 @@ import { LimitsService } from './services/limits-service'
 import { UsageProbe } from './services/usage-probe'
 import { trustWorkspace } from './services/workspace-trust'
 import { RemoteControlService } from './services/remote-control'
+import { ScheduleService } from './services/schedule-service'
+import { SCHEDULE_SERVER_NAME, createScheduleMcpServer } from './services/schedule-tools'
 import { saverOptions } from '../shared/saver'
 import { HotkeyService } from './services/hotkey-service'
 import { NotificationService } from './services/notification-service'
@@ -116,9 +118,22 @@ const manager: SessionManager = new SessionManager(
     getWindow()?.webContents.send(IpcChannels.sessionEvent, payload)
     notifications.onSessionEvent(localId, event)
     ledger.onSessionEvent(localId, event, manager.info(localId))
+    schedule.onSessionEvent(localId, event)
   },
-  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info) }
+  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info), mcpServers: async (cwd) => ({ [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, cwd) }) }
 )
+// Timed prompts and scripts. Runs headless sessions through the same manager; only fires while the app is open.
+const schedule: ScheduleService = new ScheduleService({
+  file: schedulePath(userData),
+  start: (a) => manager.start({ cwd: a.cwd, prompt: a.prompt, permissionMode: a.permissionMode }, { internal: true }),
+  close: (id) => manager.close(id),
+  denyPermission: (localId, reqId) => manager.permissionReply({ localId, reqId, decision: 'deny' }),
+  broadcast: (tasks) => getWindow()?.webContents.send(IpcChannels.scheduleState, tasks),
+  notify: (title, body) => {
+    if (Notification.isSupported()) new Notification({ title, body }).show()
+  },
+  log: (m) => console.warn('[claudrift]', m)
+})
 const claudeCli = new ClaudeCliService({
   resolve: resolveClaudeBinary,
   sdkVersions: readSdkVersions,
@@ -240,11 +255,19 @@ if (!app.requestSingleInstanceLock()) {
       claudeCli,
       limits,
       caveman,
+      schedule: {
+        list: () => schedule.list(),
+        upsert: (i) => schedule.upsert(i as Parameters<ScheduleService['upsert']>[0]),
+        remove: (id) => schedule.remove(id),
+        setEnabled: (id, en) => schedule.setEnabled(id, en),
+        run: (id) => schedule.run(id)
+      },
       remote: { getState: () => remote.getState(), start: (a) => remote.start(a), stop: () => remote.stop(), trust: (a) => trustWorkspace(a.cwd) }
     })
     updates.start()
     caveman.start()
     usageProbe.start()
+    schedule.start()
     app.on('browser-window-focus', () => usageProbe.refreshNow())
     hotkey.apply(prefs.get().hotkey)
     prefs.onChange((p) => {
@@ -271,6 +294,7 @@ app.on('will-quit', () => {
   caveman.dispose()
   usageProbe.dispose()
   remote.dispose()
+  schedule.dispose()
   autoResume.dispose()
   notifications.dispose()
 })

@@ -22,6 +22,8 @@ win:
   target:
     - nsis
   icon: build/icon.ico
+  # Always run elevated (UAC prompt on every launch). Needed for tasks that touch system locations.
+  requestedExecutionLevel: requireAdministrator
 nsis:
   artifactName: ${productName}-Setup-${version}.${ext}
   oneClick: false

@@ -306,6 +306,9 @@ export function bundledClaudePath(platform: NodeJS.Platform = process.platform, 
 
 // ---- P4: userData files and transcripts ----
 
+export function schedulePath(userDataDir: string): string {
+  return join(userDataDir, 'schedule.json')
+}
 export function prefsPath(userDataDir: string): string {
   return join(userDataDir, 'prefs.json')
 }

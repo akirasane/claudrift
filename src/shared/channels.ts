@@ -88,5 +88,13 @@ export const IpcChannels = {
   remoteTrust: 'remote:trust',
   // ---- Claude CLI / SDK versions ----
   claudeCliStatus: 'claudecli:status',
-  claudeCliUpdate: 'claudecli:update'
+  claudeCliUpdate: 'claudecli:update',
+  // ---- scheduled tasks ----
+  scheduleList: 'schedule:list',
+  scheduleSave: 'schedule:save',
+  scheduleDelete: 'schedule:delete',
+  scheduleEnable: 'schedule:enable',
+  scheduleRun: 'schedule:run',
+  /** main -> renderer */
+  scheduleState: 'schedule:state'
 } as const

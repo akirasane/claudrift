@@ -1,4 +1,4 @@
-import { Blocks, Bot, ChartColumn, FileText, GitBranch, MessagesSquare, Plug, Settings, SlidersHorizontal, Sparkles, Webhook } from 'lucide-react'
+import { Blocks, Bot, CalendarClock, ChartColumn, FileText, GitBranch, MessagesSquare, Plug, Settings, SlidersHorizontal, Sparkles, Webhook } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { PaletteCommand } from '@/lib/commands/types'
 import { APP_VIEWS, useWorkspaceStore } from '@/stores/workspace-store'
@@ -16,6 +16,7 @@ const VIEW_META: Record<AppView, { title: string; icon: LucideIcon; keywords: st
   hooks: { title: 'Go to Hooks', icon: Webhook, keywords: ['automation'] },
   usage: { title: 'Go to Usage', icon: ChartColumn, keywords: ['cost', 'tokens', 'spend'] },
   git: { title: 'Go to Git', icon: GitBranch, keywords: ['status', 'diff', 'log', 'branch'] },
+  schedule: { title: 'Go to Scheduled tasks', icon: CalendarClock, keywords: ['schedule', 'cron', 'timer', 'automation', 'recurring'] },
   preferences: { title: 'Go to Preferences', icon: SlidersHorizontal, keywords: ['prefs', 'options', 'about'] }
 }
 

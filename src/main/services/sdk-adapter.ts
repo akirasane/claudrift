@@ -55,6 +55,8 @@ export interface AdapterOptions {
   images?: ImageAttachment[]
   /** Token-saver mode (shared/saver.ts): extra environment, effort, no thinking, earlier compaction. */
   saver?: SaverOptions
+  /** In-process MCP servers added to the session (e.g. the schedule tools). */
+  mcpServers?: NonNullable<Options['mcpServers']>
   /** Extra folders added to the session (`--add-dir`). */
   additionalDirectories?: string[]
   /** UUID stamped on the initial user message (rewind target). */
@@ -717,6 +719,7 @@ export async function startSdkSession(opts: AdapterOptions): Promise<AdapterSess
     ...(opts.model ? { model: opts.model } : {}),
     ...(opts.resumeId ? { resume: opts.resumeId, forkSession: opts.fork === true } : {}),
     ...(opts.chrome ? { extraArgs: { chrome: null } } : {}),
+    ...(opts.mcpServers ? { mcpServers: opts.mcpServers } : {}),
     ...(claudePath ? { pathToClaudeCodeExecutable: claudePath } : {}),
     canUseTool: (toolName, toolInput, { signal, title, suggestions }) =>
       new Promise<PermissionResult>((resolve) => {

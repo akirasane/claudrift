@@ -5,7 +5,7 @@ import type { SessionEvent, SessionStatus } from '../../shared/events'
 import type { SaverOptions } from '../../shared/saver'
 import type { ImageAttachment, PermissionReplyArgs, RewindResult, SessionStartArgs } from '../../shared/ipc'
 import type { PluginRegistry } from './plugin-registry'
-import { BYPASS_DISABLED, startSdkSession, type AdapterSession, type PermissionModeName } from './sdk-adapter'
+import { BYPASS_DISABLED, startSdkSession, type AdapterOptions, type AdapterSession, type PermissionModeName } from './sdk-adapter'
 
 export const MAX_SESSIONS = 5
 
@@ -22,6 +22,8 @@ export interface SessionManagerDeps {
   saver?: () => SaverOptions | undefined
   /** Receives every SDK rate_limit_info from any session (usage-limit bars). */
   onRateLimitInfo?: (info: unknown) => void
+  /** Extra in-process MCP servers for a new session in `cwd`. Best effort: a failure starts the session without them. */
+  mcpServers?: (cwd: string) => Promise<NonNullable<AdapterOptions['mcpServers']> | undefined>
 }
 
 async function assertDirectory(cwd: string): Promise<void> {
@@ -50,7 +52,8 @@ export class SessionManager {
     private deps: SessionManagerDeps = {}
   ) {}
 
-  async start(args: SessionStartArgs): Promise<{ localId: string }> {
+  /** `internal` sessions (scheduled runs) get no extra MCP servers, so a scheduled task cannot schedule more tasks. */
+  async start(args: SessionStartArgs, opts: { internal?: boolean } = {}): Promise<{ localId: string }> {
     if (this.sessions.size >= MAX_SESSIONS) throw new Error(`Session cap reached (${MAX_SESSIONS})`)
     // Checked here: the SDK's own spawn error for a bad cwd is misleading ("failed to launch ... libc").
     await assertDirectory(args.cwd)
@@ -62,6 +65,7 @@ export class SessionManager {
     // An explicit model for this chat always beats the saver's cheaper default.
     const model = args.model && args.model !== 'default' ? args.model : saver?.model
     if (args.permissionMode === 'bypassPermissions' && !allowBypass) throw new Error(BYPASS_DISABLED)
+    const mcpServers = opts.internal ? undefined : await this.deps.mcpServers?.(args.cwd).catch(() => undefined)
     const localId = randomUUID()
     const live = { localId, cwd: args.cwd, tasks: new Set<string>() } as LiveSession
     // Reserve slot before the async start so the cap holds under concurrent calls.
@@ -77,6 +81,7 @@ export class SessionManager {
         thinking: true,
         ...(model ? { model } : {}),
         ...(saver ? { saver } : {}),
+        ...(mcpServers ? { mcpServers } : {}),
         ...(args.permissionMode ? { permissionMode: args.permissionMode } : {}),
         ...(allowBypass ? { allowBypass: true } : {}),
         ...(this.deps.chrome?.() === true ? { chrome: true } : {}),
