@@ -19,7 +19,7 @@ export interface SessionManagerDeps {
   /** Reads the claudeInChrome preference at call time. Defaults to off. */
   chrome?: () => boolean
   /** Token-saver options for a new session, or undefined when the mode is off. Read at call time. */
-  saver?: () => SaverOptions | undefined
+  saver?: (force?: boolean) => SaverOptions | undefined
   /** Receives every SDK rate_limit_info from any session (usage-limit bars). */
   onRateLimitInfo?: (info: unknown) => void
   /** Extra in-process MCP servers for a new session in `cwd`. Best effort: a failure starts the session without them. */
@@ -63,7 +63,7 @@ export class SessionManager {
     for (const d of extraDirs) await assertDirectory(d)
     if (this.sessions.size >= MAX_SESSIONS) throw new Error(`Session cap reached (${MAX_SESSIONS})`)
     const allowBypass = this.deps.allowBypass?.() === true
-    const saver = this.deps.saver?.()
+    const saver = this.deps.saver?.(args.saver)
     // An explicit model for this chat always beats the saver's cheaper default.
     const model = args.model && args.model !== 'default' ? args.model : saver?.model
     if (args.permissionMode === 'bypassPermissions' && !allowBypass) throw new Error(BYPASS_DISABLED)

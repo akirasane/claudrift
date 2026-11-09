@@ -41,6 +41,9 @@ interface ChatState {
   modes: Record<string, PermissionMode>
   /** Model chosen on a draft (no live session yet); sent with session:start. */
   draftModels: Record<string, string>
+  /** Token saver per chat: the choice on a draft, then what the started session used. Missing = follow the app default. */
+  savers: Record<string, boolean>
+  setSaver: (convId: string, on: boolean) => void
   /** Composer text per conversation (P4 D2); survives tab switches, not restarts. */
   drafts: Record<string, string>
   /** Images attached to the unsent message, per conversation. */
@@ -236,6 +239,8 @@ export const useChatStore = create<ChatState>((set, get) => {
     localToConv: {},
     modes: {},
     draftModels: {},
+    savers: {},
+    setSaver: (convId, on) => set((s) => (s.convs[convId]?.localId ? s : { savers: { ...s.savers, [convId]: on } })),
     drafts: {},
     draftImages: {},
     lastActive: {},
@@ -357,7 +362,9 @@ export const useChatStore = create<ChatState>((set, get) => {
         void _im
         void _a
         void _q
-        return { convs, localToConv, drafts, draftImages, lastActive, queues }
+        const { [convId]: _sv, ...savers } = s.savers
+        void _sv
+        return { convs, localToConv, drafts, draftImages, lastActive, queues, savers }
       }),
 
     seedFromHistory: (convId, events) => patch(convId, (c) => reduceAll(c, events, Date.now())),
@@ -420,6 +427,7 @@ export const useChatStore = create<ChatState>((set, get) => {
           const mode = get().modes[convId]
           if (mode) startRequested.set(convId, mode)
           const model = get().draftModels[convId]
+          const saver = get().savers[convId]
           const extraDirs = useExtraDirs.getState().dirsFor(c.cwd)
           const { localId } = await window.claudrift.session.start({
             cwd: c.cwd,
@@ -429,9 +437,16 @@ export const useChatStore = create<ChatState>((set, get) => {
             ...(images?.length ? { images } : {}),
             ...(c.resumeSessionId ? { resumeId: c.resumeSessionId } : {}),
             ...(mode ? { permissionMode: mode } : {}),
-            ...(model && model !== 'default' ? { model } : {})
+            ...(model && model !== 'default' ? { model } : {}),
+            ...(saver !== undefined ? { saver } : {})
           })
           get().bindLocalId(convId, localId)
+          // Pin what this chat started with, so its Saver chip keeps showing it if the app default changes later.
+          if (saver === undefined) {
+            void Promise.resolve(window.claudrift.prefs?.get())
+              .then((p) => p && set((s) => ({ savers: { ...s.savers, [convId]: s.savers[convId] ?? p.ultraSaver } })))
+              .catch(() => {})
+          }
         }
       } catch (err) {
         startRequested.delete(convId)

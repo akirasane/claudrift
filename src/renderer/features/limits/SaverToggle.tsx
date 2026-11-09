@@ -19,7 +19,7 @@ export function SaverToggle(): React.JSX.Element {
     try {
       const res = await window.claudrift.prefs.set({ ultraSaver: !on })
       qc.setQueryData(['prefs'], res.prefs)
-      toast(res.prefs.ultraSaver ? 'Ultra saver on' : 'Ultra saver off', { description: 'Applies to new chats, not ones already running.' })
+      toast(res.prefs.ultraSaver ? 'Ultra saver is the default for new chats' : 'Ultra saver is off by default', { description: 'Each chat can override it with the Saver chip in its composer. Chats already running keep their setting.' })
     } catch (err) {
       toast.error('Could not change the token saver', { description: err instanceof Error ? err.message : String(err) })
     }
@@ -28,7 +28,7 @@ export function SaverToggle(): React.JSX.Element {
     <Tooltip
       content={
         <span data-testid="saver-tip">
-          Ultra token saver is {on ? 'on' : 'off'}. When on, new chats use terse replies, a cheaper model, low effort, no extended
+          Ultra token saver default: {on ? 'on' : 'off'}. This is only the starting choice for new chats; each chat has its own Saver chip. When on, a chat uses terse replies, a cheaper model, low effort, no extended
           thinking, and earlier compaction. Choose the parts in Preferences.
         </span>
       }

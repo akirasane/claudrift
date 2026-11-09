@@ -146,3 +146,51 @@ export class RemoteControlService {
     this.deps.broadcast?.(this.getState())
   }
 }
+
+export interface RemoteHubDeps extends Omit<RemoteControlDeps, 'broadcast'> {
+  /** Every run that is not off (starting, on or failed), pushed on each change. */
+  broadcast?: (runs: RemoteState[]) => void
+}
+
+const cwdKey = (p: string): string => p.split('\\').join('/').replace(/\/+$/, '').toLowerCase()
+
+/** One Remote Control process per project folder, so starting it in one project does not block the others. */
+export class RemoteControlHub {
+  private runs = new Map<string, RemoteControlService>()
+  constructor(private readonly deps: RemoteHubDeps = {}) {}
+
+  list(): RemoteState[] {
+    return [...this.runs.values()].map((r) => r.getState()).filter((s) => s.status !== 'off')
+  }
+
+  start(a: RemoteStartArgs): RemoteState {
+    const key = cwdKey(a.cwd)
+    let run = this.runs.get(key)
+    if (!run) {
+      const { broadcast: _b, ...rest } = this.deps
+      void _b
+      run = new RemoteControlService({ ...rest, broadcast: () => this.emit() })
+      this.runs.set(key, run)
+    }
+    return run.start(a)
+  }
+
+  stop(cwd: string): RemoteState {
+    const key = cwdKey(cwd)
+    const run = this.runs.get(key)
+    if (!run) return { status: 'off', log: [] }
+    const s = run.stop()
+    this.runs.delete(key)
+    this.emit()
+    return s
+  }
+
+  dispose(): void {
+    for (const r of this.runs.values()) r.dispose()
+    this.runs.clear()
+  }
+
+  private emit(): void {
+    this.deps.broadcast?.(this.list())
+  }
+}

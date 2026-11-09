@@ -6,6 +6,7 @@ import { useChatStore } from '@/stores/chat-store'
 import { selectIsRunning } from './model/selectors'
 import type { SlashCommandInfo } from '@shared/events'
 import { ModelMenu } from './ModelMenu'
+import { SaverChip } from './SaverChip'
 import { SLASH_LISTBOX_ID, SlashPopup, slashOptionId } from './SlashPopup'
 import { FALLBACK_COMMANDS, filterCommands, slashQuery } from './slash-commands'
 import { ModeMenu } from './mode/ModeMenu'
@@ -361,6 +362,7 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
           <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-1">
             <ModeMenu convId={convId} disabled={disabled} />
             <ModelMenu convId={convId} disabled={disabled} />
+            <SaverChip convId={convId} {...(disabled ? { disabled } : {})} />
             <AddDirButton convId={convId} {...(disabled ? { disabled } : {})} />
             <input
               ref={fileInput}

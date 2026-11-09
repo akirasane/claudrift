@@ -6,23 +6,37 @@ import { cn } from '@/lib/cn'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useRemoteMirror } from './remote-mirror'
 
-/** Latest Remote Control state pushed by main. */
-export function useRemoteState(): RemoteState {
-  const [state, setState] = React.useState<RemoteState>(EMPTY_REMOTE)
+const normCwd = (p: string): string => p.split('\\').join('/').replace(/\/+$/, '').toLowerCase()
+
+/** Every project that has a Remote Control run (starting, on or failed), as pushed by main. */
+export function useRemoteStates(): RemoteState[] {
+  const [states, setStates] = React.useState<RemoteState[]>([])
   React.useEffect(() => {
     const api = window.claudrift?.remote
     if (!api) return
     let alive = true
     void Promise.resolve(api.getState())
-      .then((s) => alive && s && setState(s))
+      .then((s) => alive && Array.isArray(s) && setStates(s))
       .catch(() => {})
-    const off = api.onState((s) => setState(s))
+    const off = api.onState((s) => setStates(s))
     return () => {
       alive = false
       off?.()
     }
   }, [])
-  return state
+  return states
+}
+
+/** The run for one project, or an off state. */
+export function remoteFor(states: RemoteState[], cwd: string | null | undefined): RemoteState {
+  const hit = cwd ? states.find((r) => r.cwd && normCwd(r.cwd) === normCwd(cwd)) : undefined
+  return hit ?? { ...EMPTY_REMOTE, log: [] }
+}
+
+/** Mirrors one run's sessions as read-only tabs. */
+function RemoteMirror({ run }: { run: RemoteState }): null {
+  useRemoteMirror(run)
+  return null
 }
 
 const trustListeners = new Set<() => void>()
@@ -34,21 +48,21 @@ export function defaultRemoteName(cwd: string): string {
   return `Claudrift - ${cwd.split(/[\\/]/).filter(Boolean).pop() ?? 'project'}`
 }
 
-/** Starts Remote Control in the active project (or stops it when running). Returns a short note for the UI. */
+/** Starts Remote Control in the active project (or stops it when running there). Returns a short note for the UI. */
 export async function toggleRemote(name?: string): Promise<string> {
   const api = window.claudrift?.remote
   if (!api) return 'Remote Control is not available'
-  const cur = await api.getState()
+  const cwd = useWorkspaceStore.getState().cwd
+  if (!cwd) return 'Open a project first to start Remote Control'
+  const cur = remoteFor(await api.getState(), cwd)
   if (cur.status === 'on' || cur.status === 'starting') {
-    await api.stop()
-    return 'Remote Control stopped'
+    await api.stop({ cwd })
+    return 'Remote Control stopped for this project'
   }
   if (cur.status === 'error' && cur.needsTrust) {
     requestTrustDialog()
     return ''
   }
-  const cwd = useWorkspaceStore.getState().cwd
-  if (!cwd) return 'Open a project first to start Remote Control'
   const label = name?.trim() || `Claudrift - ${cwd.split(/[\\/]/).filter(Boolean).pop() ?? 'project'}`
   await api.start({ cwd, name: label })
   return `Remote Control starting as "${label}". It opens separate sessions you can drive from claude.ai/code or the phone app.`
@@ -65,8 +79,10 @@ export async function toggleRemoteWithToast(name?: string): Promise<void> {
 
 /** Status bar switch that runs `claude remote-control` in the active project. */
 export function RemoteToggle(): React.JSX.Element {
-  const s = useRemoteState()
-  useRemoteMirror(s)
+  const all = useRemoteStates()
+  const activeCwd = useWorkspaceStore((x) => x.cwd)
+  const s = remoteFor(all, activeCwd)
+  const others = all.filter((r) => (r.status === 'on' || r.status === 'starting') && r !== s && !(r.cwd && activeCwd && normCwd(r.cwd) === normCwd(activeCwd)))
   const active = s.status === 'on' || s.status === 'starting'
   const [trustOpen, setTrustOpen] = React.useState(false)
   const [nameOpen, setNameOpen] = React.useState(false)
@@ -122,6 +138,11 @@ export function RemoteToggle(): React.JSX.Element {
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-0.5">
+      {all
+        .filter((r) => r.status === 'on' || r.status === 'starting')
+        .map((r) => (
+          <RemoteMirror key={r.cwd ?? r.name} run={r} />
+        ))}
       <Tooltip
         content={
           <span data-testid="remote-tip">
@@ -131,7 +152,7 @@ export function RemoteToggle(): React.JSX.Element {
                 ? `Remote Control is on${s.cwd ? ` in ${s.cwd}` : ''}. Open claude.ai/code or the phone app to drive sessions on this PC.${s.url ? '' : ' (no link was printed; look for this machine in the Claude app)'}${s.log.length ? ` Last output: ${s.log[s.log.length - 1]}` : ''}`
                 : s.status === 'starting'
                   ? `Remote Control is starting...${s.log.length ? ` ${s.log[s.log.length - 1]}` : ''}`
-                  : 'Remote Control is off. Turn it on to drive sessions on this PC from claude.ai/code or the phone app.'}
+                  : `Remote Control is off for this project. Turn it on to drive its sessions from claude.ai/code or the phone app. It runs per project, so other projects can have their own.${others.length ? ` Also on: ${others.map((r) => r.cwd).join(', ')}.` : ''}`}
           </span>
         }
       >
@@ -149,6 +170,7 @@ export function RemoteToggle(): React.JSX.Element {
           <Radio size={11} aria-hidden />
           <span className="font-medium">REMOTE</span>
           <span>{s.status === 'error' ? 'ERR' : s.status === 'starting' ? '...' : active ? 'ON' : 'OFF'}</span>
+          {others.length > 0 && <span data-testid="remote-others" className="text-fg-3">+{others.length}</span>}
         </button>
       </Tooltip>
       <Dialog open={nameOpen} onOpenChange={setNameOpen}>

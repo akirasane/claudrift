@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import type { ChildProcess } from 'node:child_process'
 import { describe, expect, it, vi } from 'vitest'
-import { RemoteControlService, stripAnsi } from './remote-control'
+import { RemoteControlHub, RemoteControlService, stripAnsi } from './remote-control'
 
 function fakeChild(): ChildProcess & { out: EventEmitter; err: EventEmitter } {
   const c = new EventEmitter() as ChildProcess & { out: EventEmitter; err: EventEmitter }
@@ -80,5 +80,26 @@ describe('RemoteControlService', () => {
 
   it('strips ANSI', () => {
     expect(stripAnsi('\u001b[1;31mred\u001b[0m \u001b]8;;http://x\u0007link')).toBe('red link')
+  })
+})
+
+describe('RemoteControlHub', () => {
+  it('runs one process per project and stops them independently', () => {
+    const kids = [fakeChild(), fakeChild()]
+    const spawn = vi.fn(() => kids[spawn.mock.calls.length - 1]!)
+    const kill = vi.fn()
+    const broadcast = vi.fn()
+    const hub = new RemoteControlHub({ spawn, kill, broadcast, exe: () => 'claude.exe' })
+    hub.start({ cwd: 'C:/a' })
+    hub.start({ cwd: 'C:/b' })
+    expect(spawn).toHaveBeenCalledTimes(2)
+    // Same folder again (different spelling) reuses the run.
+    hub.start({ cwd: 'c:/A/' })
+    expect(spawn).toHaveBeenCalledTimes(2)
+    expect(hub.list().map((s) => s.cwd)).toEqual(['C:/a', 'C:/b'])
+    hub.stop('C:/a')
+    expect(kill).toHaveBeenCalledWith(kids[0])
+    expect(hub.list().map((s) => s.cwd)).toEqual(['C:/b'])
+    expect(broadcast).toHaveBeenLastCalledWith([expect.objectContaining({ cwd: 'C:/b' })])
   })
 })

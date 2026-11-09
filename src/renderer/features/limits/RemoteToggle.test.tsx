@@ -8,7 +8,7 @@ const start = vi.fn()
 const stop = vi.fn()
 const trust = vi.fn()
 let state: RemoteState
-let push: (s: RemoteState) => void = () => {}
+let push: (s: RemoteState[]) => void = () => {}
 
 beforeAll(() => {
   class RO {
@@ -22,17 +22,17 @@ beforeAll(() => {
 beforeEach(() => {
   vi.clearAllMocks()
   state = { status: 'off', log: [] }
-  useWorkspaceStore.setState({ cwd: 'C:\proj' })
-  start.mockImplementation(async () => (state = { status: 'starting', log: [] }))
+  useWorkspaceStore.setState({ cwd: 'C:/proj' })
+  start.mockImplementation(async () => (state = { status: 'starting', cwd: 'C:/proj', log: [] }))
   trust.mockResolvedValue({ ok: true })
   stop.mockImplementation(async () => (state = { status: 'off', log: [] }))
   ;(window as unknown as { claudrift: unknown }).claudrift = {
     remote: {
-      getState: async () => state,
+      getState: async () => (state.status === 'off' ? [] : [state]),
       start,
       stop,
       trust,
-      onState: (cb: (s: RemoteState) => void) => {
+      onState: (cb: (s: RemoteState[]) => void) => {
         push = cb
         return () => {}
       }
@@ -49,18 +49,18 @@ describe('RemoteToggle', () => {
     const input = (await screen.findByTestId('remote-name')) as HTMLInputElement
     fireEvent.change(input, { target: { value: 'my phone' } })
     fireEvent.click(screen.getByTestId('remote-name-start'))
-    await waitFor(() => expect(start).toHaveBeenCalledWith(expect.objectContaining({ cwd: 'C:\proj', name: 'my phone' })))
-    act(() => push({ status: 'on', url: 'https://claude.ai/code/x', log: [] }))
+    await waitFor(() => expect(start).toHaveBeenCalledWith(expect.objectContaining({ cwd: 'C:/proj', name: 'my phone' })))
+    act(() => push([{ status: 'on', url: 'https://claude.ai/code/x', cwd: 'C:/proj', log: [] }]))
     await waitFor(() => expect(screen.getByTestId('status-remote')).toHaveTextContent('ON'))
     expect(screen.getByTestId('remote-copy')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('status-remote'))
-    await waitFor(() => expect(stop).toHaveBeenCalled())
+    await waitFor(() => expect(stop).toHaveBeenCalledWith({ cwd: 'C:/proj' }))
   })
 
   it('shows ERR on an error state', async () => {
     render(<RemoteToggle />)
     await screen.findByTestId('status-remote')
-    act(() => push({ status: 'error', message: 'Workspace not trusted', log: [] }))
+    act(() => push([{ status: 'error', message: 'Workspace not trusted', cwd: 'C:/proj', log: [] }]))
     await waitFor(() => expect(screen.getByTestId('status-remote')).toHaveTextContent('ERR'))
     expect(screen.queryByTestId('trust-dialog')).toBeNull()
   })
@@ -68,7 +68,7 @@ describe('RemoteToggle', () => {
   it('trust dialog: cancel does nothing', async () => {
     render(<RemoteToggle />)
     await screen.findByTestId('status-remote')
-    act(() => push({ status: 'error', message: 'Error: Workspace not trusted', needsTrust: true, cwd: 'C:/proj', log: [] }))
+    act(() => push([{ status: 'error', message: 'Error: Workspace not trusted', needsTrust: true, cwd: 'C:/proj', log: [] }]))
     expect(await screen.findByText('Trust this folder?')).toBeInTheDocument()
     expect(screen.getByTestId('trust-path')).toHaveTextContent('C:/proj')
     fireEvent.click(screen.getByText('Cancel'))
@@ -81,7 +81,7 @@ describe('RemoteToggle', () => {
     render(<RemoteToggle />)
     await screen.findByTestId('status-remote')
     state = { status: 'error', message: 'Error: Workspace not trusted', needsTrust: true, cwd: 'C:/proj', log: [] }
-    act(() => push(state))
+    act(() => push([state]))
     fireEvent.click(await screen.findByText('Cancel'))
     await waitFor(() => expect(screen.queryByTestId('trust-dialog')).toBeNull())
     fireEvent.click(screen.getByTestId('status-remote'))
@@ -89,6 +89,17 @@ describe('RemoteToggle', () => {
     await waitFor(() => expect(start).toHaveBeenCalledWith({ cwd: 'C:/proj' }))
     expect(trust).toHaveBeenCalledWith({ cwd: 'C:/proj' })
     expect(trust.mock.invocationCallOrder[0]!).toBeLessThan(start.mock.invocationCallOrder[0]!)
+    expect(stop).not.toHaveBeenCalled()
+  })
+
+  it('only shows the active project, and counts the others', async () => {
+    render(<RemoteToggle />)
+    await screen.findByTestId('status-remote')
+    act(() => push([{ status: 'on', url: 'https://claude.ai/code/y', cwd: 'D:/other', log: [] }]))
+    await waitFor(() => expect(screen.getByTestId('remote-others')).toHaveTextContent('+1'))
+    expect(screen.getByTestId('status-remote')).toHaveTextContent('OFF')
+    fireEvent.click(screen.getByTestId('status-remote'))
+    expect(await screen.findByTestId('remote-name')).toBeInTheDocument()
     expect(stop).not.toHaveBeenCalled()
   })
 })

@@ -72,9 +72,9 @@ const api: ClaudriftApi = {
   remote: {
     getState: () => ipcRenderer.invoke(IpcChannels.remoteGet),
     start: (a) => ipcRenderer.invoke(IpcChannels.remoteStart, a),
-    stop: () => ipcRenderer.invoke(IpcChannels.remoteStop),
+    stop: (a) => ipcRenderer.invoke(IpcChannels.remoteStop, a),
     trust: (a) => ipcRenderer.invoke(IpcChannels.remoteTrust, a),
-    onState: (cb) => subscribe<RemoteState>(IpcChannels.remoteState, cb)
+    onState: (cb) => subscribe<RemoteState[]>(IpcChannels.remoteState, cb)
   },
   schedule: {
     list: () => ipcRenderer.invoke(IpcChannels.scheduleList),

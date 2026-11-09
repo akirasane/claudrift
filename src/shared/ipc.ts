@@ -66,7 +66,9 @@ export const SessionStartSchema = z
     model: z.string().optional(),
     permissionMode: PermissionModeSchema.optional(),
     resumeId: z.string().optional(),
-    fork: z.boolean().optional()
+    fork: z.boolean().optional(),
+    /** Token saver for this chat: true / false overrides the app default, undefined follows it. */
+    saver: z.boolean().optional()
   })
   .refine((a) => a.prompt.length > 0 || (a.images?.length ?? 0) > 0, { message: 'prompt or image required' })
 export type SessionStartArgs = z.infer<typeof SessionStartSchema>
@@ -338,6 +340,7 @@ export function looksAbsolute(p: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(p) || /^[\\/]/.test(p)
 }
 
+export const RemoteStopSchema = z.object({ cwd: z.string().min(1) })
 export const RemoteTrustSchema = z.object({ cwd: z.string().min(1).refine((p) => looksAbsolute(p), { message: 'cwd must be an absolute path' }) })
 
 export const ClaudeCliStatusArgsSchema = z.object({ refresh: z.boolean().optional() })
@@ -489,11 +492,12 @@ export interface ClaudriftApi {
     onState(cb: (s: LimitsState) => void): () => void
   }
   remote: {
-    getState(): Promise<RemoteState>
+    /** Every project with a Remote Control run (starting, on or failed). */
+    getState(): Promise<RemoteState[]>
     start(a: { cwd: string; name?: string; permissionMode?: PermissionMode }): Promise<RemoteState>
-    stop(): Promise<RemoteState>
+    stop(a: { cwd: string }): Promise<RemoteState>
     trust(a: { cwd: string }): Promise<{ ok: boolean; message?: string }>
-    onState(cb: (s: RemoteState) => void): () => void
+    onState(cb: (s: RemoteState[]) => void): () => void
   }
   schedule: {
     list(): Promise<ScheduledTask[]>

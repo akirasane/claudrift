@@ -16,7 +16,7 @@ import { FileSearchService } from './services/file-search'
 import { LimitsService } from './services/limits-service'
 import { UsageProbe } from './services/usage-probe'
 import { trustWorkspace } from './services/workspace-trust'
-import { RemoteControlService } from './services/remote-control'
+import { RemoteControlHub } from './services/remote-control'
 import { ScheduleService } from './services/schedule-service'
 import { SCHEDULE_SERVER_NAME, createScheduleMcpServer } from './services/schedule-tools'
 import { ADMIN_SERVER_NAME, ASSISTANT_SYSTEM_PROMPT, createAdminMcpServer } from './services/assistant-tools'
@@ -111,7 +111,7 @@ const usageProbe = new UsageProbe({
   enabled: () => prefs.get().showLimitsBar,
   log: (m) => console.warn('[claudrift]', m)
 })
-const remote = new RemoteControlService({
+const remote = new RemoteControlHub({
   broadcast: (state) => getWindow()?.webContents.send(IpcChannels.remoteState, state)
 })
 const caveman = new CavemanService({
@@ -128,7 +128,7 @@ const manager: SessionManager = new SessionManager(
     ledger.onSessionEvent(localId, event, manager.info(localId))
     schedule.onSessionEvent(localId, event)
   },
-  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info), mcpServers: async (cwd) => ({
+  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: (force) => saverOptions(force === undefined ? prefs.get() : { ...prefs.get(), ultraSaver: force }), onRateLimitInfo: (info) => limits.ingest(info), mcpServers: async (cwd) => ({
       [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, cwd),
       ...(isAssistantDir(cwd) ? { [ADMIN_SERVER_NAME]: await createAdminMcpServer(adminDeps) } : {})
     }),
@@ -297,7 +297,7 @@ if (!app.requestSingleInstanceLock()) {
         setEnabled: (id, en) => schedule.setEnabled(id, en),
         run: (id) => schedule.run(id)
       },
-      remote: { getState: () => remote.getState(), start: (a) => remote.start(a), stop: () => remote.stop(), trust: (a) => trustWorkspace(a.cwd) }
+      remote: { list: () => remote.list(), start: (a) => remote.start(a), stop: (cwd) => remote.stop(cwd), trust: (a) => trustWorkspace(a.cwd) }
     })
     updates.start()
     caveman.start()

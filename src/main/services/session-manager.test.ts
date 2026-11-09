@@ -228,3 +228,22 @@ describe('SessionManager assistant wiring', () => {
     }
   })
 })
+
+describe('SessionManager per-chat saver', () => {
+  it('passes the chat override to the saver dep and uses its options', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
+    try {
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
+      const saver = vi.fn((force?: boolean) => (force === false ? undefined : { model: 'haiku' }))
+      const m = new SessionManager(() => {}, { startSession: startSession as never, saver: saver as never })
+      await m.start({ cwd: dir, prompt: 'a', saver: true })
+      await m.start({ cwd: dir, prompt: 'b', saver: false })
+      await m.start({ cwd: dir, prompt: 'c' })
+      expect(saver.mock.calls.map((c) => c[0])).toEqual([true, false, undefined])
+      expect(startSession.mock.calls[0]?.[0]).toMatchObject({ model: 'haiku' })
+      expect((startSession.mock.calls[1]?.[0] as Record<string, unknown>).model).toBeUndefined()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
