@@ -247,3 +247,20 @@ describe('SessionManager per-chat saver', () => {
     }
   })
 })
+
+describe('SessionManager scheduled runs', () => {
+  it('marks internal sessions, even after they ended', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
+    try {
+      const m = new SessionManager(() => {}, { startSession: vi.fn(async () => fakeAdapter()) })
+      const a = await m.start({ cwd: dir, prompt: 'x' }, { internal: true })
+      const b = await m.start({ cwd: dir, prompt: 'y' })
+      expect(m.isInternal(a.localId)).toBe(true)
+      expect(m.isInternal(b.localId)).toBe(false)
+      m.close(a.localId)
+      expect(m.isInternal(a.localId)).toBe(true)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})

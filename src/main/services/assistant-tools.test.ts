@@ -26,3 +26,27 @@ describe('assistant auto-allowed tools', () => {
     for (const t of ASSISTANT_AUTO_ALLOWED) expect(t).not.toMatch(/set_|add_|remove_|write_|create_|plugin_action|schedule_task|delete_/)
   })
 })
+
+describe('settings write guard', () => {
+  it('flags hooks, bypass default and broad allow rules, but not ordinary edits', async () => {
+    const { riskyChanges } = await import('./assistant-tools')
+    const old = JSON.stringify({ model: 'sonnet', permissions: { allow: ['Read'] } })
+    expect(riskyChanges(old, JSON.stringify({ model: 'opus', permissions: { allow: ['Read', 'Bash(git status)'] } }))).toEqual([])
+    expect(riskyChanges(old, JSON.stringify({ hooks: { Stop: [] } }))).toContain('hooks')
+    expect(riskyChanges(old, JSON.stringify({ permissions: { defaultMode: 'bypassPermissions' } }))).toContain('permissions.defaultMode')
+    expect(riskyChanges(old, JSON.stringify({ permissions: { allow: ['Bash'] } })).join()).toMatch(/broad allow rule/)
+    expect(riskyChanges(old, JSON.stringify({ env: { ANTHROPIC_BASE_URL: 'http://evil' } }))).toContain('env.ANTHROPIC_BASE_URL')
+  })
+
+  it('masks env secrets for the model and restores them on write', async () => {
+    const { maskSettings, restoreMasked } = await import('./assistant-tools')
+    const file = JSON.stringify({ env: { MY_API_KEY: 'sk-real', DEBUG: '1' } })
+    const shown = maskSettings(file)
+    expect(shown).not.toContain('sk-real')
+    expect(shown).toContain('DEBUG')
+    const back = restoreMasked(file, shown)
+    expect(back.ok && JSON.parse(back.text).env.MY_API_KEY).toBe('sk-real')
+    const bad = restoreMasked('{}', JSON.stringify({ env: { NEW_TOKEN: '***' } }))
+    expect(bad.ok).toBe(false)
+  })
+})

@@ -1,9 +1,10 @@
 import { autoUpdater } from 'electron-updater'
-import { app, BrowserWindow, Menu, Notification, powerSaveBlocker, screen, shell } from 'electron'
+import { app, BrowserWindow, Menu, Notification, powerMonitor, powerSaveBlocker, screen, shell } from 'electron'
 import { join } from 'node:path'
 import { IpcChannels } from '../shared/ipc'
 import type { SessionEventPayload } from '../shared/ipc'
 import { registerIpc } from './ipc'
+import { detectElevation } from './ipc/app'
 import type { Disposer } from './ipc/dispose'
 import { isAppNavigation } from './navigation'
 import { assistantPath, claudeConfigDir, createConfigPaths, trashDir, limitsPath, readSdkVersions, schedulePath, resetClaudeBinaryCache, resolveClaudeBinary, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
@@ -122,14 +123,17 @@ const caveman = new CavemanService({
 // Session event fan-out: renderer, notifications, usage ledger.
 const manager: SessionManager = new SessionManager(
   (localId, event) => {
-    const payload: SessionEventPayload = { localId, event }
-    getWindow()?.webContents.send(IpcChannels.sessionEvent, payload)
-    notifications.onSessionEvent(localId, event)
+    // Scheduled runs are headless: nothing in the window listens to them, and their permission requests are auto-denied.
+    if (!manager.isInternal(localId)) {
+      const payload: SessionEventPayload = { localId, event }
+      getWindow()?.webContents.send(IpcChannels.sessionEvent, payload)
+      notifications.onSessionEvent(localId, event)
+    }
     ledger.onSessionEvent(localId, event, manager.info(localId))
     schedule.onSessionEvent(localId, event)
   },
   { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: (force) => saverOptions(force === undefined ? prefs.get() : { ...prefs.get(), ultraSaver: force }), onRateLimitInfo: (info) => limits.ingest(info), mcpServers: async (cwd) => ({
-      [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, cwd),
+      [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, isAssistantDir(cwd) ? undefined : cwd),
       ...(isAssistantDir(cwd) ? { [ADMIN_SERVER_NAME]: await createAdminMcpServer(adminDeps) } : {})
     }),
     appendSystemPrompt: (cwd) => (isAssistantDir(cwd) ? ASSISTANT_SYSTEM_PROMPT : undefined),
@@ -304,9 +308,17 @@ if (!app.requestSingleInstanceLock()) {
     caveman.start()
     usageProbe.start()
     schedule.start()
+    detectElevation()
+    // Waking from sleep: run catch-up tasks and record the others as missed right away, not up to 15 s later.
+    powerMonitor.on('resume', () => void schedule.tick())
+    const applyLogin = (on: boolean): void => {
+      if (app.isPackaged && process.platform === 'win32') app.setLoginItemSettings({ openAtLogin: on })
+    }
+    applyLogin(prefs.get().startAtLogin)
     app.on('browser-window-focus', () => usageProbe.refreshNow())
     hotkey.apply(prefs.get().hotkey)
     prefs.onChange((p) => {
+      applyLogin(p.startAtLogin)
       hotkey.apply(p.hotkey)
       usageProbe.refreshNow()
     })

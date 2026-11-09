@@ -29,7 +29,9 @@ export function runShellScript(command: string, cwd: string, timeoutMs = SCRIPT_
     child.stderr.on('data', add)
     const timer = setTimeout(() => {
       output += '\n[timed out]'
-      child.kill()
+      // shell:true on Windows: child.kill() would only end cmd.exe, not the script it started.
+      if (process.platform === 'win32' && child.pid) spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true }).on('error', () => {})
+      else child.kill()
     }, timeoutMs)
     child.on('error', (err) => {
       clearTimeout(timer)
@@ -113,8 +115,12 @@ export class ScheduleService {
       delete t.nextRunAt
       return
     }
+    // A catch-up task keeps its overdue time; tick() runs it once.
+    if (t.catchUp && t.nextRunAt !== undefined && t.nextRunAt <= now && t.when.type !== 'interval') return
     if (t.nextRunAt !== undefined && t.nextRunAt < now - MISSED_GRACE_MS && t.when.type !== 'interval') {
       this.addRun(t, { id: randomUUID(), startedAt: t.nextRunAt, endedAt: now, status: 'missed', summary: 'The app was not open at the scheduled time.' })
+      // A one-time task that was missed has nothing left to wait for.
+      if (t.when.type === 'once') t.enabled = false
     }
     if (t.nextRunAt === undefined || t.nextRunAt < now - MISSED_GRACE_MS) {
       const next = nextRunAfter(t.when, now, { lastRunAt: t.when.type === 'interval' ? now : t.lastRunAt, createdAt: t.createdAt })
@@ -172,6 +178,7 @@ export class ScheduleService {
       action: input.action,
       permissionMode: input.permissionMode,
       when: input.when,
+      ...(input.catchUp ? { catchUp: true } : {}),
       createdAt: now,
       runs: []
     }
@@ -182,7 +189,8 @@ export class ScheduleService {
         cwd: input.cwd,
         action: input.action,
         permissionMode: input.permissionMode,
-        when: input.when
+        when: input.when,
+        catchUp: input.catchUp || undefined
       })
     } else {
       this.tasks.push(t)
@@ -217,8 +225,10 @@ export class ScheduleService {
     const now = this.now()
     for (const t of this.tasks) {
       if (t.enabled && t.nextRunAt !== undefined && t.nextRunAt <= now) {
-        if (t.nextRunAt < now - MISSED_GRACE_MS) this.settle(t, now)
-        else void this.run(t.id)
+        if (t.nextRunAt < now - MISSED_GRACE_MS && !t.catchUp) {
+          this.settle(t, now)
+          this.persist()
+        } else void this.run(t.id)
       }
     }
   }

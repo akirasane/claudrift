@@ -51,6 +51,7 @@ const TASK_TERMINAL = new Set(['completed', 'failed', 'stopped', 'killed'])
 export class SessionManager {
   private sessions = new Map<string, LiveSession>()
   private modelsCache: ModelOption[] | undefined
+  private internalIds = new Set<string>()
   constructor(
     private emit: (localId: string, e: SessionEvent) => void,
     private deps: SessionManagerDeps = {}
@@ -74,6 +75,7 @@ export class SessionManager {
     const appendPrompt = opts.internal ? undefined : this.deps.appendSystemPrompt?.(args.cwd)
     const localId = randomUUID()
     const live = { localId, cwd: args.cwd, tasks: new Set<string>() } as LiveSession
+    if (opts.internal) this.internalIds.add(localId)
     // Reserve slot before the async start so the cap holds under concurrent calls.
     this.sessions.set(localId, live)
     try {
@@ -137,6 +139,12 @@ export class SessionManager {
       default:
         break
     }
+  }
+
+  /** True for scheduled (headless) runs. Their events must not reach the window or raise notifications. */
+  isInternal(localId: string): boolean {
+    // Kept after the session ends: its last events (session_closed) still arrive after the entry is gone.
+    return this.internalIds.has(localId)
   }
 
   /** cwd and SDK session id of a live session (undefined for unknown or finished ones). */

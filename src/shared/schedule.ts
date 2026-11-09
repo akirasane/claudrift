@@ -39,6 +39,8 @@ export interface ScheduledTask {
   action: ScheduleAction
   permissionMode: ScheduleMode
   when: ScheduleWhen
+  /** Run once at the next start / wake-up when a run was missed while the app was closed or the PC asleep. */
+  catchUp?: boolean
   createdAt: number
   lastRunAt?: number
   nextRunAt?: number
@@ -70,7 +72,8 @@ export const ScheduleInputSchema = z.object({
   cwd: z.string().min(1),
   action: ScheduleActionSchema,
   permissionMode: z.enum(SCHEDULE_MODES).default('default'),
-  when: ScheduleWhenSchema
+  when: ScheduleWhenSchema,
+  catchUp: z.boolean().default(false)
 })
 export type ScheduleInput = z.input<typeof ScheduleInputSchema>
 

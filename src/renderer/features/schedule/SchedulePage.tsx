@@ -66,6 +66,7 @@ interface Draft {
   everyMinutes: string
   at: string
   mode: ScheduleMode
+  catchUp: boolean
   enabled: boolean
 }
 
@@ -83,6 +84,7 @@ function toDraft(cwd: string, t?: ScheduledTask): Draft {
     everyMinutes: '60',
     at: localInput(Date.now() + 3_600_000),
     mode: 'default',
+    catchUp: false,
     enabled: true
   }
   if (!t) return base
@@ -92,6 +94,7 @@ function toDraft(cwd: string, t?: ScheduledTask): Draft {
     name: t.name,
     cwd: t.cwd,
     enabled: t.enabled,
+    catchUp: t.catchUp === true,
     mode: t.permissionMode,
     ...(t.action.kind === 'prompt' ? { kind: 'prompt', prompt: t.action.prompt } : { kind: 'script', command: t.action.command, followUp: t.action.followUpPrompt ?? '' }),
     ...(t.when.type === 'daily'
@@ -109,6 +112,7 @@ function toInput(d: Draft): ScheduleInput {
     enabled: d.enabled,
     cwd: d.cwd,
     permissionMode: d.mode,
+    catchUp: d.catchUp,
     action:
       d.kind === 'prompt'
         ? { kind: 'prompt', prompt: d.prompt }
@@ -260,6 +264,12 @@ function TaskDialog({ draft, onClose }: { draft: Draft | null; onClose: () => vo
               ))}
             </select>
           </Field>
+          {d.whenType !== 'interval' && (
+            <label className="flex items-center gap-2 text-sm text-fg-2">
+              <input type="checkbox" data-testid="task-catch-up" checked={d.catchUp} onChange={(e) => set({ catchUp: e.target.checked })} />
+              Run once if it was missed (app closed or PC asleep at the time)
+            </label>
+          )}
           {d.mode === 'bypassPermissions' && (
             <p role="note" className="rounded-md border border-warn-border bg-warn-bg px-3 py-2 text-sm text-warn">
               Bypass runs every tool call with no one watching, including shell commands and file deletes. It only works if Bypass mode is allowed in Preferences.
@@ -297,12 +307,15 @@ function TaskCard({ t, onEdit }: { t: ScheduledTask; onEdit: () => void }): Reac
           <div className="flex items-center gap-2">
             <span className="truncate text-base font-medium text-fg">{t.name}</span>
             <span className="shrink-0 rounded-xs bg-bg-3 px-1.5 text-xs text-fg-3">{t.action.kind === 'prompt' ? 'prompt' : 'script'}</span>
+            {t.permissionMode === 'bypassPermissions' && <span className="shrink-0 rounded-xs bg-warn-bg px-1.5 text-xs text-warn">bypass</span>}
+            {t.action.kind === 'script' && <span className="shrink-0 rounded-xs bg-warn-bg px-1.5 text-xs text-warn">runs a command</span>}
+            {t.catchUp && <span className="shrink-0 rounded-xs bg-bg-3 px-1.5 text-xs text-fg-3">catch up</span>}
           </div>
           <div className="truncate text-sm text-fg-3">
             {describeWhen(t.when)} · {t.cwd}
           </div>
           <div className="text-sm text-fg-3">
-            {t.enabled && t.nextRunAt ? `Next: ${when(t.nextRunAt)}` : t.enabled ? 'No upcoming run' : 'Paused'}
+            {t.enabled && t.nextRunAt ? `Next: ${when(t.nextRunAt)}` : t.enabled ? 'No upcoming run' : 'Off: review it, then switch it on'}
             {last && (
               <>
                 {' · Last: '}

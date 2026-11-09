@@ -468,6 +468,36 @@ function Field({ label, value, testId }: { label: string; value: string | undefi
   )
 }
 
+function SystemSection({ prefs, set }: { prefs: AppPrefs; set: (p: AppPrefsPatch) => void }): React.JSX.Element {
+  const [elevated, setElevated] = React.useState<boolean | undefined>()
+  const [win, setWin] = React.useState(false)
+  React.useEffect(() => {
+    void window.claudrift?.app?.info().then((i) => {
+      setElevated(i.elevated)
+      setWin(i.platform === 'win32' && i.packaged)
+    })
+  }, [])
+  return (
+    <Section id="system" title="System">
+      <Row label="Start when I sign in" hint="Scheduled tasks only run while Claudrift is open. Installed Windows app only." htmlFor="start-login">
+        <Toggle id="start-login" checked={prefs.startAtLogin} data-testid="start-login" onCheckedChange={(v) => set({ startAtLogin: v })} />
+      </Row>
+      {win && (
+        <Row
+          label={elevated ? 'Running as administrator' : 'Run as administrator'}
+          hint="Claude's tools, MCP servers and scheduled scripts then run with admin rights. Windows also blocks drag-and-drop from Explorer into an elevated window. Only use it when a task needs it."
+        >
+          {!elevated && (
+            <Button variant="secondary" size="sm" data-testid="relaunch-admin" onClick={() => void window.claudrift.app.relaunchElevated()}>
+              Relaunch as administrator
+            </Button>
+          )}
+        </Row>
+      )}
+    </Section>
+  )
+}
+
 function AboutSection(): React.JSX.Element {
   const info = useQuery<AppInfo>({ queryKey: ['app', 'info'], queryFn: () => window.claudrift.app.info(), retry: false })
   const i = info.data
@@ -511,6 +541,7 @@ export function PreferencesPage(): React.JSX.Element {
             <NotificationsSection prefs={prefs} set={(p) => void set(p)} />
             <HotkeySection prefs={prefs} hotkey={hotkey} set={(p) => void set(p)} />
             <UpdatesSection prefs={prefs} set={(p) => void set(p)} />
+            <SystemSection prefs={prefs} set={(p) => void set(p)} />
             <ClaudeCliSection />
             <Section id="statusbar" title="Status bar">
               <Row

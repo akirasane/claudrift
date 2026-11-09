@@ -29,6 +29,8 @@ export interface AppPrefs {
   allowBypassMode: boolean
   /** Check GitHub releases for a newer version in the background (installed builds only). Manual checks always work. */
   autoUpdate: boolean
+  /** Start Claudrift when you sign in to Windows (installed builds only). */
+  startAtLogin: boolean
   /** Status bar: 5-hour / 7-day usage-limit bars. */
   showLimitsBar: boolean
   /** Status bar: the caveman plugin's token-savings badge. */
@@ -59,6 +61,7 @@ export const DEFAULT_PREFS: AppPrefs = {
   autoResume: { enabled: false, prompt: DEFAULT_AUTO_RESUME_PROMPT },
   allowBypassMode: false,
   autoUpdate: true,
+  startAtLogin: false,
   showLimitsBar: true,
   showCavemanBadge: true,
   claudeInChrome: false,
@@ -75,6 +78,7 @@ export type AppPrefsPatch = {
   autoResume?: Partial<AutoResumePrefs>
   allowBypassMode?: boolean
   autoUpdate?: boolean
+  startAtLogin?: boolean
   showLimitsBar?: boolean
   showCavemanBadge?: boolean
   claudeInChrome?: boolean

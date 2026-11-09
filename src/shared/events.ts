@@ -165,4 +165,6 @@ export interface AppInfo {
   userDataDir: string
   /** Folder of the built-in Claudrift assistant chat. */
   assistantDir?: string
+  /** The app is running with administrator rights (Windows). */
+  elevated?: boolean
 }

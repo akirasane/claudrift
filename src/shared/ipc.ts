@@ -301,6 +301,7 @@ export const AppPrefsPatchSchema = z
     autoResume: z.object({ enabled: Flag, prompt: z.string().max(2000) }).partial().strict(),
     allowBypassMode: Flag,
     autoUpdate: Flag,
+    startAtLogin: Flag,
     showLimitsBar: Flag,
     showCavemanBadge: Flag,
     claudeInChrome: Flag,
@@ -468,6 +469,8 @@ export interface ClaudriftApi {
   }
   app: {
     info(): Promise<AppInfo>
+    /** Windows, installed app: quits and starts a new copy as administrator (UAC prompt). */
+    relaunchElevated(): Promise<void>
     authStatus(opts?: { refresh?: boolean }): Promise<AuthStatus>
     /** Fire-and-forget. */
     setActiveSession(localId: string | null): void

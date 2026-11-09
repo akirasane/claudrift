@@ -49,6 +49,7 @@ const api: ClaudriftApi = {
   },
   app: {
     info: () => ipcRenderer.invoke(IpcChannels.appInfo),
+    relaunchElevated: () => ipcRenderer.invoke(IpcChannels.appRelaunchElevated),
     authStatus: (opts) => ipcRenderer.invoke(IpcChannels.appAuthStatus, opts ?? {}),
     setActiveSession: (localId) => ipcRenderer.send(IpcChannels.appSetActiveSession, { localId }),
     onFocusSession: (cb) => subscribe<{ localId: string }>(IpcChannels.appFocusSession, cb)

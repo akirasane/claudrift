@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { SCHEDULE_MODES, describeWhen } from '../../shared/schedule'
-import type { ScheduleInput, ScheduleWhen, ScheduledTask } from '../../shared/schedule'
+import type { ScheduleInput, ScheduleMode, ScheduleWhen, ScheduledTask } from '../../shared/schedule'
 
 /** The slice of ScheduleService the chat tools need. */
 export interface ScheduleApi {
@@ -33,7 +33,10 @@ export function parseWhen(a: { when_type: 'once' | 'interval' | 'daily'; at?: st
  * In-process MCP server that lets a chat create, list and delete scheduled tasks. Each call goes through the
  * normal permission prompt, so the user sees the full task before it exists.
  */
-export async function createScheduleMcpServer(api: ScheduleApi, sessionCwd: string) {
+/** Modes a chat may give a task. Bypass is only available when the user sets the task up themselves. */
+const CHAT_SCHEDULE_MODES = SCHEDULE_MODES.filter((m) => m !== 'bypassPermissions') as unknown as [string, ...string[]]
+
+export async function createScheduleMcpServer(api: ScheduleApi, defaultCwd: string | undefined) {
   const { createSdkMcpServer, tool } = await import('@anthropic-ai/claude-agent-sdk')
   return createSdkMcpServer({
     name: SCHEDULE_SERVER_NAME,
@@ -41,39 +44,38 @@ export async function createScheduleMcpServer(api: ScheduleApi, sessionCwd: stri
     tools: [
       tool(
         'schedule_task',
-        'Schedule a prompt or a shell script to run later in Claudrift, while the app is open. Use this when the user asks to run something at a time or on a repeat. Pass `prompt` (Claude runs it in a fresh session) or `script` (a shell command; add `follow_up_prompt` to have Claude react to its output).',
+        'Schedule a prompt to run later in Claudrift, while the app is open (or once at the next start when catch_up is set). Use this when the user asks to run something at a time or on a repeat. The task is created DISABLED: the user reviews it on the Schedule page and switches it on. Tasks made from chat can only run a prompt, never a script, and never in Bypass mode. Tell the user to enable it there.',
         {
           name: z.string().describe('Short title for the task'),
-          prompt: z.string().optional().describe('The prompt Claude runs when the task fires'),
-          script: z.string().optional().describe('A shell command to run instead of a prompt'),
-          follow_up_prompt: z.string().optional().describe('With `script`: sent to Claude together with the script output'),
+          prompt: z.string().describe('The prompt Claude runs when the task fires'),
           when_type: z.enum(['once', 'interval', 'daily']),
           at: z.string().optional().describe('once: local date-time, e.g. 2026-03-01T14:30'),
           every_minutes: z.number().int().min(1).optional().describe('interval: minutes between runs'),
           time: z.string().optional().describe('daily: local time HH:MM (24 hour)'),
           days: z.array(z.number().int().min(0).max(6)).optional().describe('daily: weekdays, 0 = Sunday. Omit for every day'),
-          cwd: z.string().optional().describe('Project folder to run in. Defaults to this chat\'s folder'),
+          cwd: z.string().optional().describe(defaultCwd ? "Project folder to run in. Defaults to this chat's folder" : 'Absolute path of the project folder to run in (required: this chat has no project)'),
+          catch_up: z.boolean().optional().describe('Run once at the next start or wake-up if a run was missed'),
           permission_mode: z
-            .enum(SCHEDULE_MODES)
+            .enum(CHAT_SCHEDULE_MODES)
             .optional()
             .describe('Tool permissions for the unattended run. Nobody can approve prompts, so tools that need approval are denied. Default: default')
         },
         async (a) => {
-          if (!a.prompt === !a.script) return text('Pass exactly one of `prompt` or `script`.', true)
           const when = parseWhen(a)
           if (typeof when === 'string') return text(when, true)
+          const cwd = a.cwd ?? defaultCwd
+          if (!cwd) return text('Pass the cwd argument: the absolute path of the project folder the task should run in. Ask the user which project.', true)
           try {
             const t = api.upsert({
               name: a.name,
-              enabled: true,
-              cwd: a.cwd ?? sessionCwd,
-              action: a.prompt
-                ? { kind: 'prompt', prompt: a.prompt }
-                : { kind: 'script', command: a.script as string, ...(a.follow_up_prompt ? { followUpPrompt: a.follow_up_prompt } : {}) },
-              permissionMode: a.permission_mode ?? 'default',
-              when
+              enabled: false,
+              cwd,
+              action: { kind: 'prompt', prompt: a.prompt },
+              permissionMode: (a.permission_mode ?? 'default') as ScheduleMode,
+              when,
+              catchUp: a.catch_up === true
             })
-            return text(`Scheduled "${t.name}" (id ${t.id}): ${describeWhen(t.when)}. Next run: ${t.nextRunAt ? new Date(t.nextRunAt).toLocaleString() : 'none'}.`)
+            return text('Created "' + t.name + '" (id ' + t.id + '): ' + describeWhen(t.when) + '. It is OFF until the user enables it on the Schedule page.')
           } catch (err) {
             return text(err instanceof Error ? err.message : String(err), true)
           }

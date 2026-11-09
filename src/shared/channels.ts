@@ -17,6 +17,7 @@ export const IpcChannels = {
   historySummarize: 'history:summarize',
   historySaveSummary: 'history:saveSummary',
   appInfo: 'app:info',
+  appRelaunchElevated: 'app:relaunchElevated',
   sessionSupportedModels: 'session:supportedModels',
   configRead: 'config:read',
   configWrite: 'config:write',

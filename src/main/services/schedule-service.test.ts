@@ -108,4 +108,28 @@ describe('ScheduleService', () => {
     await svc.flush()
     expect(JSON.parse(readFileSync(s.file, 'utf8')).tasks).toHaveLength(1)
   })
+
+  it('runs a catch-up task once after being closed, instead of recording a miss', async () => {
+    const s = setup()
+    const first = s.mk()
+    first.upsert({ ...daily, catchUp: true })
+    await first.flush()
+    s.advance(MISSED_GRACE_MS + 3 * 3_600_000)
+    const again = s.mk()
+    await again.tick()
+    await Promise.resolve()
+    expect(s.start).toHaveBeenCalledTimes(1)
+    expect(again.list()[0]!.runs.some((r) => r.status === 'missed')).toBe(false)
+  })
+
+  it('switches a missed one-time task off', async () => {
+    const s = setup()
+    const first = s.mk()
+    first.upsert({ ...daily, when: { type: 'once', at: s.clock() + 60_000 } })
+    await first.flush()
+    s.advance(MISSED_GRACE_MS + 3_600_000)
+    const t = s.mk().list()[0]!
+    expect(t.runs[0]).toMatchObject({ status: 'missed' })
+    expect(t.enabled).toBe(false)
+  })
 })
