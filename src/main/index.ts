@@ -6,7 +6,7 @@ import type { SessionEventPayload } from '../shared/ipc'
 import { registerIpc } from './ipc'
 import type { Disposer } from './ipc/dispose'
 import { isAppNavigation } from './navigation'
-import { claudeConfigDir, limitsPath, readSdkVersions, schedulePath, resetClaudeBinaryCache, resolveClaudeBinary, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
+import { assistantPath, claudeConfigDir, createConfigPaths, trashDir, limitsPath, readSdkVersions, schedulePath, resetClaudeBinaryCache, resolveClaudeBinary, prefsPath, transcriptsRoot, usageCachePath, usageLedgerPath, windowStatePath } from './paths'
 import { AutoResumeMain } from './services/autoresume-main'
 import { AuthStatusService } from './services/auth-status'
 import { runClaude } from './services/claude-cli'
@@ -19,6 +19,14 @@ import { trustWorkspace } from './services/workspace-trust'
 import { RemoteControlService } from './services/remote-control'
 import { ScheduleService } from './services/schedule-service'
 import { SCHEDULE_SERVER_NAME, createScheduleMcpServer } from './services/schedule-tools'
+import { ADMIN_SERVER_NAME, ASSISTANT_SYSTEM_PROMPT, createAdminMcpServer } from './services/assistant-tools'
+import type { AssistantDeps } from './services/assistant-tools'
+import { McpService } from './services/mcp-service'
+import { PluginService } from './services/plugin-service'
+import { ItemsService } from './services/items-service'
+import { Trash } from './services/trash'
+import { sharedConfig } from './ipc/config'
+import { mkdirSync } from 'node:fs'
 import { saverOptions } from '../shared/saver'
 import { HotkeyService } from './services/hotkey-service'
 import { NotificationService } from './services/notification-service'
@@ -120,8 +128,35 @@ const manager: SessionManager = new SessionManager(
     ledger.onSessionEvent(localId, event, manager.info(localId))
     schedule.onSessionEvent(localId, event)
   },
-  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info), mcpServers: async (cwd) => ({ [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, cwd) }) }
+  { registry: pluginRegistry, allowBypass: () => prefs.get().allowBypassMode, chrome: () => prefs.get().claudeInChrome, saver: () => saverOptions(prefs.get()), onRateLimitInfo: (info) => limits.ingest(info), mcpServers: async (cwd) => ({
+      [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, cwd),
+      ...(isAssistantDir(cwd) ? { [ADMIN_SERVER_NAME]: await createAdminMcpServer(adminDeps) } : {})
+    }),
+    appendSystemPrompt: (cwd) => (isAssistantDir(cwd) ? ASSISTANT_SYSTEM_PROMPT : undefined)
+  }
 )
+// The assistant chat works in its own folder under userData, not in a project.
+const assistantDir = assistantPath(userData)
+mkdirSync(assistantDir, { recursive: true })
+const normDir = (p: string): string => p.split('\\').join('/').replace(/\/+$/, '').toLowerCase()
+const isAssistantDir = (cwd: string): boolean => normDir(cwd) === normDir(assistantDir)
+let itemsSvc: ItemsService | undefined
+const adminDeps: AssistantDeps = {
+  prefs,
+  mcp: new McpService({ paths: createConfigPaths() }),
+  plugins: new PluginService(),
+  items: {
+    list: (kind, cwd) => getItems().list(kind, cwd),
+    create: (a) => getItems().create(a)
+  },
+  config: () => sharedConfig()?.service
+}
+function getItems(): ItemsService {
+  if (itemsSvc) return itemsSvc
+  const shared = sharedConfig()
+  if (!shared) throw new Error('Config service is not ready yet.')
+  return (itemsSvc = new ItemsService(shared.paths, pluginRegistry, shared.service, new Trash(trashDir(userData))))
+}
 // Timed prompts and scripts. Runs headless sessions through the same manager; only fires while the app is open.
 const schedule: ScheduleService = new ScheduleService({
   file: schedulePath(userData),

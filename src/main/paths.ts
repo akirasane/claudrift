@@ -306,6 +306,10 @@ export function bundledClaudePath(platform: NodeJS.Platform = process.platform, 
 
 // ---- P4: userData files and transcripts ----
 
+/** Working folder of the built-in assistant chat (not a user project). */
+export function assistantPath(userDataDir: string): string {
+  return join(userDataDir, 'assistant')
+}
 export function schedulePath(userDataDir: string): string {
   return join(userDataDir, 'schedule.json')
 }

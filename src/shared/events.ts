@@ -163,4 +163,6 @@ export interface AppInfo {
   electronVersion: string
   packaged: boolean
   userDataDir: string
+  /** Folder of the built-in Claudrift assistant chat. */
+  assistantDir?: string
 }

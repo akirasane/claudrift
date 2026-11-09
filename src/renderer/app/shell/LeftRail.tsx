@@ -1,4 +1,4 @@
-import { Blocks, Bot, CalendarClock, ChartColumn, FileText, GitBranch, MessagesSquare, Plug, Settings, SlidersHorizontal, Sparkles, Webhook } from 'lucide-react'
+import { Blocks, Bot, CalendarClock, ChartColumn, FileText, GitBranch, LifeBuoy, MessagesSquare, Plug, Settings, SlidersHorizontal, Sparkles, Webhook } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { AppView } from '@/stores/workspace-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -53,6 +53,7 @@ export function LeftRail({ disabled }: { disabled?: boolean }): React.JSX.Elemen
       </nav>
       <SessionList disabled={disabled} />
       <div className="flex flex-col gap-0.5 border-t border-border p-2">
+        <NavRow view="assistant" label="Assistant" icon={LifeBuoy} />
         <NavRow view="settings" label="Settings" icon={Settings} />
         <NavRow view="preferences" label="Preferences" icon={SlidersHorizontal} />
       </div>

@@ -109,7 +109,7 @@ describe('SessionManager', () => {
   it('requests summarized thinking so thinking blocks carry text', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
-      const startSession = vi.fn(async () => fakeAdapter())
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
       await new SessionManager(() => {}, { startSession }).start({ cwd: dir, prompt: 'hi' })
       expect(startSession).toHaveBeenCalledWith(expect.objectContaining({ thinking: true }))
     } finally {
@@ -120,7 +120,7 @@ describe('SessionManager', () => {
   it('passes chrome only when the preference is on', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
-      const startSession = vi.fn(async () => fakeAdapter())
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
       await new SessionManager(() => {}, { startSession, chrome: () => true }).start({ cwd: dir, prompt: 'hi' })
       expect(startSession).toHaveBeenLastCalledWith(expect.objectContaining({ chrome: true }))
       await new SessionManager(() => {}, { startSession, chrome: () => false }).start({ cwd: dir, prompt: 'hi' })
@@ -159,7 +159,7 @@ describe('SessionManager extra directories', () => {
     const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     const extra = mkdtempSync(join(tmpdir(), 'claudrift-extra-'))
     try {
-      const startSession = vi.fn(async () => fakeAdapter())
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
       const m = new SessionManager(() => {}, { startSession })
       await m.start({ cwd: dir, prompt: 'hi', additionalDirectories: [extra] })
       expect(startSession).toHaveBeenCalledWith(expect.objectContaining({ additionalDirectories: [extra] }))
@@ -178,7 +178,7 @@ describe('SessionManager token saver', () => {
   it('passes the saver and its model to a new session, read at call time', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
-      const startSession = vi.fn(async () => fakeAdapter())
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
       let current: typeof saver | undefined
       const m = new SessionManager(() => {}, { startSession, saver: () => current })
       await m.start({ cwd: dir, prompt: 'hi' })
@@ -195,12 +195,34 @@ describe('SessionManager token saver', () => {
   it('an explicit model for the chat beats the saver model; "default" does not', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
     try {
-      const startSession = vi.fn(async () => fakeAdapter())
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
       const m = new SessionManager(() => {}, { startSession, saver: () => saver })
       await m.start({ cwd: dir, prompt: 'hi', model: 'opus' })
       expect(startSession).toHaveBeenLastCalledWith(expect.objectContaining({ model: 'opus', saver }))
       await m.start({ cwd: dir, prompt: 'hi', model: 'default' })
       expect(startSession).toHaveBeenLastCalledWith(expect.objectContaining({ model: 'haiku' }))
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('SessionManager assistant wiring', () => {
+  it('passes the extra system prompt and MCP servers to normal sessions only', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'claudrift-'))
+    try {
+      const startSession = vi.fn(async (_o: unknown) => fakeAdapter())
+      const m = new SessionManager(() => {}, {
+        startSession: startSession as never,
+        appendSystemPrompt: (cwd) => (cwd === dir ? 'ASSIST' : undefined),
+        mcpServers: async () => ({ x: { type: 'sdk', name: 'x' } as never })
+      })
+      await m.start({ cwd: dir, prompt: 'hi' })
+      expect(startSession.mock.calls[0]?.[0]).toMatchObject({ appendSystemPrompt: 'ASSIST', mcpServers: { x: expect.anything() } })
+      await m.start({ cwd: dir, prompt: 'hi' }, { internal: true })
+      const internal = startSession.mock.calls[1]?.[0] as Record<string, unknown>
+      expect(internal.appendSystemPrompt).toBeUndefined()
+      expect(internal.mcpServers).toBeUndefined()
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

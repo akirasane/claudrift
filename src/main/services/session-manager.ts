@@ -24,6 +24,8 @@ export interface SessionManagerDeps {
   onRateLimitInfo?: (info: unknown) => void
   /** Extra in-process MCP servers for a new session in `cwd`. Best effort: a failure starts the session without them. */
   mcpServers?: (cwd: string) => Promise<NonNullable<AdapterOptions['mcpServers']> | undefined>
+  /** Extra system prompt text for a new session in `cwd` (the assistant chat), or undefined. */
+  appendSystemPrompt?: (cwd: string) => string | undefined
 }
 
 async function assertDirectory(cwd: string): Promise<void> {
@@ -66,6 +68,7 @@ export class SessionManager {
     const model = args.model && args.model !== 'default' ? args.model : saver?.model
     if (args.permissionMode === 'bypassPermissions' && !allowBypass) throw new Error(BYPASS_DISABLED)
     const mcpServers = opts.internal ? undefined : await this.deps.mcpServers?.(args.cwd).catch(() => undefined)
+    const appendPrompt = opts.internal ? undefined : this.deps.appendSystemPrompt?.(args.cwd)
     const localId = randomUUID()
     const live = { localId, cwd: args.cwd, tasks: new Set<string>() } as LiveSession
     // Reserve slot before the async start so the cap holds under concurrent calls.
@@ -82,6 +85,7 @@ export class SessionManager {
         ...(model ? { model } : {}),
         ...(saver ? { saver } : {}),
         ...(mcpServers ? { mcpServers } : {}),
+        ...(appendPrompt ? { appendSystemPrompt: appendPrompt } : {}),
         ...(args.permissionMode ? { permissionMode: args.permissionMode } : {}),
         ...(allowBypass ? { allowBypass: true } : {}),
         ...(this.deps.chrome?.() === true ? { chrome: true } : {}),

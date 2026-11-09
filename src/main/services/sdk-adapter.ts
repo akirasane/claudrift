@@ -57,6 +57,8 @@ export interface AdapterOptions {
   saver?: SaverOptions
   /** In-process MCP servers added to the session (e.g. the schedule tools). */
   mcpServers?: NonNullable<Options['mcpServers']>
+  /** Added to Claude Code's own system prompt (the Claudrift assistant chat). */
+  appendSystemPrompt?: string
   /** Extra folders added to the session (`--add-dir`). */
   additionalDirectories?: string[]
   /** UUID stamped on the initial user message (rewind target). */
@@ -720,6 +722,9 @@ export async function startSdkSession(opts: AdapterOptions): Promise<AdapterSess
     ...(opts.resumeId ? { resume: opts.resumeId, forkSession: opts.fork === true } : {}),
     ...(opts.chrome ? { extraArgs: { chrome: null } } : {}),
     ...(opts.mcpServers ? { mcpServers: opts.mcpServers } : {}),
+    ...(opts.appendSystemPrompt
+      ? { systemPrompt: { type: 'preset' as const, preset: 'claude_code' as const, append: opts.appendSystemPrompt } }
+      : {}),
     ...(claudePath ? { pathToClaudeCodeExecutable: claudePath } : {}),
     canUseTool: (toolName, toolInput, { signal, title, suggestions }) =>
       new Promise<PermissionResult>((resolve) => {

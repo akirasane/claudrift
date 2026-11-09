@@ -2,7 +2,7 @@ import { app, ipcMain } from 'electron'
 import { AuthStatusArgsSchema, IpcChannels, SetActiveSessionSchema } from '../../shared/ipc'
 import type { AuthStatus } from '../../shared/app'
 import type { AppInfo } from '../../shared/events'
-import { readSdkVersions, resolveClaudeBinary, resolveClaudeExecutable, trashDir } from '../paths'
+import { assistantPath, readSdkVersions, resolveClaudeBinary, resolveClaudeExecutable, trashDir } from '../paths'
 import type { AuthStatusService } from '../services/auth-status'
 import type { Disposer } from './dispose'
 import { removeHandlers } from './dispose'
@@ -21,7 +21,8 @@ export function getAppInfo(): AppInfo {
     version: app.getVersion(),
     electronVersion: process.versions.electron ?? 'unknown',
     packaged: app.isPackaged,
-    userDataDir: userData
+    userDataDir: userData,
+    assistantDir: assistantPath(userData)
   }
 }
 
