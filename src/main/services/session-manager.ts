@@ -26,6 +26,8 @@ export interface SessionManagerDeps {
   mcpServers?: (cwd: string) => Promise<NonNullable<AdapterOptions['mcpServers']> | undefined>
   /** Extra system prompt text for a new session in `cwd` (the assistant chat), or undefined. */
   appendSystemPrompt?: (cwd: string) => string | undefined
+  /** Tools to run without a prompt for a new session in `cwd` (the assistant's read-only tools). */
+  allowedTools?: (cwd: string) => string[] | undefined
 }
 
 async function assertDirectory(cwd: string): Promise<void> {
@@ -68,6 +70,7 @@ export class SessionManager {
     const model = args.model && args.model !== 'default' ? args.model : saver?.model
     if (args.permissionMode === 'bypassPermissions' && !allowBypass) throw new Error(BYPASS_DISABLED)
     const mcpServers = opts.internal ? undefined : await this.deps.mcpServers?.(args.cwd).catch(() => undefined)
+    const extraAllowed = opts.internal ? undefined : this.deps.allowedTools?.(args.cwd)
     const appendPrompt = opts.internal ? undefined : this.deps.appendSystemPrompt?.(args.cwd)
     const localId = randomUUID()
     const live = { localId, cwd: args.cwd, tasks: new Set<string>() } as LiveSession
@@ -86,6 +89,7 @@ export class SessionManager {
         ...(saver ? { saver } : {}),
         ...(mcpServers ? { mcpServers } : {}),
         ...(appendPrompt ? { appendSystemPrompt: appendPrompt } : {}),
+        ...(extraAllowed?.length ? { extraAllowedTools: extraAllowed } : {}),
         ...(args.permissionMode ? { permissionMode: args.permissionMode } : {}),
         ...(allowBypass ? { allowBypass: true } : {}),
         ...(this.deps.chrome?.() === true ? { chrome: true } : {}),

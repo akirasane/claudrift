@@ -19,7 +19,7 @@ import { trustWorkspace } from './services/workspace-trust'
 import { RemoteControlHub } from './services/remote-control'
 import { ScheduleService } from './services/schedule-service'
 import { SCHEDULE_SERVER_NAME, createScheduleMcpServer } from './services/schedule-tools'
-import { ADMIN_SERVER_NAME, ASSISTANT_SYSTEM_PROMPT, createAdminMcpServer } from './services/assistant-tools'
+import { ADMIN_SERVER_NAME, ASSISTANT_AUTO_ALLOWED, ASSISTANT_SYSTEM_PROMPT, createAdminMcpServer } from './services/assistant-tools'
 import type { AssistantDeps } from './services/assistant-tools'
 import { McpService } from './services/mcp-service'
 import { PluginService } from './services/plugin-service'
@@ -132,7 +132,8 @@ const manager: SessionManager = new SessionManager(
       [SCHEDULE_SERVER_NAME]: await createScheduleMcpServer(schedule, cwd),
       ...(isAssistantDir(cwd) ? { [ADMIN_SERVER_NAME]: await createAdminMcpServer(adminDeps) } : {})
     }),
-    appendSystemPrompt: (cwd) => (isAssistantDir(cwd) ? ASSISTANT_SYSTEM_PROMPT : undefined)
+    appendSystemPrompt: (cwd) => (isAssistantDir(cwd) ? ASSISTANT_SYSTEM_PROMPT : undefined),
+    allowedTools: (cwd) => (isAssistantDir(cwd) ? ASSISTANT_AUTO_ALLOWED : undefined)
   }
 )
 // The assistant chat works in its own folder under userData, not in a project.

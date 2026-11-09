@@ -37,6 +37,10 @@ export function AssistantPage(): React.JSX.Element {
   }, [])
 
   const convId = `claudrift-assistant-${n}`
+  // Always start in Default mode: changes must be approved by the user, not decided by auto mode.
+  React.useEffect(() => {
+    if (dir) useChatStore.getState().seedMode(convId, 'default')
+  }, [dir, convId])
   const target = React.useMemo(() => (dir ? { convId, cwd: dir } : undefined), [dir, convId])
 
   const startOver = async (): Promise<void> => {

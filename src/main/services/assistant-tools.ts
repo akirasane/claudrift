@@ -222,6 +222,20 @@ export async function createAdminMcpServer(deps: AssistantDeps) {
 const memoryRef = (scope: MemoryScope, cwd?: string): ConfigFileRef => ({ kind: 'memory', scope, ...(cwd ? { cwd } : {}) })
 const settingsRef = (scope: SettingsScope, cwd?: string): ConfigFileRef => ({ kind: 'settings', scope, ...(cwd ? { cwd } : {}) })
 
+/** Looking changes nothing, so these run without a prompt. Everything else the assistant does asks first. */
+export const ASSISTANT_READ_ONLY_TOOLS = [
+  'get_app_settings',
+  'list_mcp_servers',
+  'list_plugins',
+  'list_skills_commands_agents',
+  'read_memory',
+  'read_claude_settings'
+]
+export const ASSISTANT_AUTO_ALLOWED: string[] = [
+  ...ASSISTANT_READ_ONLY_TOOLS.map((t) => `mcp__${ADMIN_SERVER_NAME}__${t}`),
+  'mcp__claudrift-schedule__list_scheduled_tasks'
+]
+
 /** Appended to Claude Code's system prompt in the assistant chat only. */
 export const ASSISTANT_SYSTEM_PROMPT = `You are the Claudrift assistant, built into the Claudrift desktop app (a GUI for Claude Code). You help the user set up and change Claudrift and their Claude Code configuration. You are not working on a code project: this chat has no project of its own.
 

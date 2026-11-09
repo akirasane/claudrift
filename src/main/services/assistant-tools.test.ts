@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ADMIN_SERVER_NAME, ASSISTANT_SYSTEM_PROMPT, createAdminMcpServer } from './assistant-tools'
+import { ADMIN_SERVER_NAME, ASSISTANT_AUTO_ALLOWED, ASSISTANT_SYSTEM_PROMPT, createAdminMcpServer } from './assistant-tools'
 import type { AssistantDeps } from './assistant-tools'
 
 describe('assistant admin tools', () => {
@@ -17,5 +17,12 @@ describe('assistant admin tools', () => {
   it('tells the model which tools to use', () => {
     expect(ASSISTANT_SYSTEM_PROMPT).toContain('claudrift-admin')
     expect(ASSISTANT_SYSTEM_PROMPT).toContain('project_dir')
+  })
+})
+
+describe('assistant auto-allowed tools', () => {
+  it('only lets read-only tools skip the prompt', () => {
+    expect(ASSISTANT_AUTO_ALLOWED).toContain('mcp__claudrift-admin__list_plugins')
+    for (const t of ASSISTANT_AUTO_ALLOWED) expect(t).not.toMatch(/set_|add_|remove_|write_|create_|plugin_action|schedule_task|delete_/)
   })
 })

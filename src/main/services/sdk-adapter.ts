@@ -59,6 +59,8 @@ export interface AdapterOptions {
   mcpServers?: NonNullable<Options['mcpServers']>
   /** Added to Claude Code's own system prompt (the Claudrift assistant chat). */
   appendSystemPrompt?: string
+  /** Tools that run without a permission prompt, on top of the task-list tools. */
+  extraAllowedTools?: string[]
   /** Extra folders added to the session (`--add-dir`). */
   additionalDirectories?: string[]
   /** UUID stamped on the initial user message (rewind target). */
@@ -701,7 +703,7 @@ export async function startSdkSession(opts: AdapterOptions): Promise<AdapterSess
     ...(opts.onStderr ? { stderr: opts.onStderr } : {}),
     settingSources: opts.settingSources ?? ['user', 'project', 'local'],
     // Headless sessions hide the task-list tools unless named here; the todo panel needs them. They only edit the list.
-    allowedTools: [...TASK_TOOLS],
+    allowedTools: [...TASK_TOOLS, ...(opts.extraAllowedTools ?? [])],
     // Subagents stream no deltas or thinking, only whole messages; this adds a periodic one-line "what it is doing now".
     agentProgressSummaries: true,
     ...(opts.additionalDirectories?.length ? { additionalDirectories: opts.additionalDirectories } : {}),
