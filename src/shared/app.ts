@@ -39,6 +39,8 @@ export interface AppPrefs {
   claudeInChrome: boolean
   /** Tool cards (Edit, Read, Bash, ...) start expanded. Off: collapsed to their header line. */
   toolCardsExpanded: boolean
+  /** Toast once per conversation when its total cost passes this many USD. 0 = off. */
+  costAlertUsd: number
   /** Ultra token-saver mode for new sessions (see shared/saver.ts). */
   ultraSaver: boolean
   ultraSaverParts: SaverParts
@@ -66,6 +68,7 @@ export const DEFAULT_PREFS: AppPrefs = {
   showCavemanBadge: true,
   claudeInChrome: false,
   toolCardsExpanded: false,
+  costAlertUsd: 0,
   ultraSaver: false,
   ultraSaverParts: { ...DEFAULT_SAVER_PARTS },
   ultraSaverConfig: { ...DEFAULT_SAVER_CONFIG }
@@ -83,6 +86,7 @@ export type AppPrefsPatch = {
   showCavemanBadge?: boolean
   claudeInChrome?: boolean
   toolCardsExpanded?: boolean
+  costAlertUsd?: number
   ultraSaver?: boolean
   ultraSaverParts?: Partial<SaverParts>
   ultraSaverConfig?: Partial<SaverConfig>

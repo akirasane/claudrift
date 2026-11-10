@@ -146,6 +146,30 @@ function AcceleratorInput({
   )
 }
 
+function CostAlertInput({ value, onCommit }: { value: number; onCommit: (v: number) => void }): React.JSX.Element {
+  const [text, setText] = React.useState(String(value))
+  React.useEffect(() => setText(String(value)), [value])
+  const commit = (): void => {
+    const n = Number(text)
+    if (!Number.isFinite(n) || n < 0) return setText(String(value))
+    const usd = Math.min(100000, Math.round(n * 100) / 100)
+    setText(String(usd))
+    if (usd !== value) onCommit(usd)
+  }
+  return (
+    <Input
+      id="cost-alert"
+      data-testid="cost-alert"
+      inputMode="decimal"
+      value={text}
+      className="h-[30px] w-24 text-right"
+      onChange={(e) => setText(e.target.value.replace(/[^\d.]/g, ''))}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+    />
+  )
+}
+
 const MODEL_CUSTOM = '__custom'
 
 /** Fine-tuning for each saver part. Each control is enabled only when the saver and its part are on. */
@@ -627,6 +651,13 @@ export function PreferencesPage(): React.JSX.Element {
                   data-testid="tool-cards-expanded"
                   onCheckedChange={(v) => void set({ toolCardsExpanded: v })}
                 />
+              </Row>
+              <Row
+                label="Cost alert (USD)"
+                hint="Shows a toast once per conversation when its total cost passes this amount. 0 turns it off."
+                htmlFor="cost-alert"
+              >
+                <CostAlertInput value={prefs.costAlertUsd ?? 0} onCommit={(v) => void set({ costAlertUsd: v })} />
               </Row>
             </Section>
             <Section id="chrome" title="Browser testing">

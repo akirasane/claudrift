@@ -33,6 +33,7 @@ const PrefsFileSchema = z.object({
   showCavemanBadge: z.boolean().optional(),
   claudeInChrome: z.boolean().optional(),
   toolCardsExpanded: z.boolean().optional(),
+  costAlertUsd: z.number().min(0).max(100000).optional(),
   ultraSaver: z.boolean().optional(),
   ultraSaverParts: z.object({ caveman: z.boolean(), model: z.boolean(), compact: z.boolean() }).partial().optional(),
   ultraSaverConfig: z
@@ -67,6 +68,7 @@ export function mergePrefs(base: AppPrefs, patch: AppPrefsPatch): AppPrefs {
     showCavemanBadge: patch.showCavemanBadge ?? base.showCavemanBadge,
     claudeInChrome: patch.claudeInChrome ?? base.claudeInChrome,
     toolCardsExpanded: patch.toolCardsExpanded ?? base.toolCardsExpanded,
+    costAlertUsd: patch.costAlertUsd ?? base.costAlertUsd,
     ultraSaver: patch.ultraSaver ?? base.ultraSaver,
     ultraSaverParts: { ...base.ultraSaverParts, ...clean(patch.ultraSaverParts) },
     ultraSaverConfig: { ...base.ultraSaverConfig, ...clean(patch.ultraSaverConfig) }

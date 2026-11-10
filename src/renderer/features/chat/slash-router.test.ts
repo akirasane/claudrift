@@ -22,6 +22,11 @@ describe('routeSlash', () => {
     expect(routeSlash('/rc my phone')).toEqual({ kind: 'remote', name: 'my phone' })
   })
 
+  it('routes bare /export, passes /export with args', () => {
+    expect(routeSlash('/export')).toEqual({ kind: 'export' })
+    expect(routeSlash('/export now')).toBeNull()
+  })
+
   it('is case-insensitive on the command name', () => {
     expect(routeSlash('/Clear')).toEqual({ kind: 'clear' })
   })

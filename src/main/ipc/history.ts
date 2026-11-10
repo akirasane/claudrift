@@ -5,15 +5,20 @@ import {
   HistoryLoadSchema,
   HistoryRenameSchema,
   HistorySaveSummarySchema,
+  HistorySearchSchema,
   HistorySummarizeSchema,
   IpcChannels
 } from '../../shared/ipc'
-import type { HistorySessionInfo, ProjectInfo, SessionEvent } from '../../shared/events'
+import type { HistorySearchHit, HistorySessionInfo, ProjectInfo, SessionEvent } from '../../shared/events'
 import { HistoryService } from '../services/history-service'
+import { HistorySearchService } from '../services/history-search'
 import type { Disposer } from './dispose'
 import { removeHandlers } from './dispose'
 
-export function registerHistoryIpc(service: HistoryService = new HistoryService()): Disposer {
+export function registerHistoryIpc(
+  service: HistoryService = new HistoryService(),
+  search: HistorySearchService = new HistorySearchService()
+): Disposer {
   ipcMain.handle(IpcChannels.historyListProjects, (): Promise<ProjectInfo[]> => service.listProjects())
   ipcMain.handle(IpcChannels.historyList, (_e, raw: unknown): Promise<HistorySessionInfo[]> => {
     return service.list(HistoryListSchema.parse(raw).cwd)
@@ -22,6 +27,10 @@ export function registerHistoryIpc(service: HistoryService = new HistoryService(
     const a = HistoryLoadSchema.parse(raw)
     return service.load(a.sessionId, a.cwd)
   })
+  ipcMain.handle(
+    IpcChannels.historySearch,
+    (_e, raw: unknown): Promise<HistorySearchHit[]> => search.search(HistorySearchSchema.parse(raw).query)
+  )
   ipcMain.handle(IpcChannels.historyDelete, async (_e, raw: unknown): Promise<void> => {
     const a = HistoryDeleteSchema.parse(raw)
     await service.delete(a.sessionId, a.cwd)
@@ -42,6 +51,7 @@ export function registerHistoryIpc(service: HistoryService = new HistoryService(
     IpcChannels.historyListProjects,
     IpcChannels.historyList,
     IpcChannels.historyLoad,
+    IpcChannels.historySearch,
     IpcChannels.historyDelete,
     IpcChannels.historyRename,
     IpcChannels.historySummarize,

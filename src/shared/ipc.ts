@@ -20,7 +20,7 @@ import type {
   ShellProfile
 } from './config'
 import type { AppPrefs, AppPrefsPatch, AuthStatus, AutoResumeReport, PrefsSetResult, UpdateState } from './app'
-import type { AppInfo, HistorySessionInfo, ProjectInfo, SessionEvent } from './events'
+import type { AppInfo, HistorySearchHit, HistorySessionInfo, ProjectInfo, SessionEvent } from './events'
 import type { GitDiff, GitLog, GitStatus } from './git'
 import type { CavemanState, LimitsState } from './limits'
 import type { ClaudeCliStatus, ClaudeCliUpdateResult } from './claude-cli'
@@ -92,6 +92,13 @@ export type HistoryListArgs = z.infer<typeof HistoryListSchema>
 
 export const HistoryLoadSchema = z.object({ sessionId: z.string().min(1), cwd: z.string().optional() })
 export type HistoryLoadArgs = z.infer<typeof HistoryLoadSchema>
+export const ExportMarkdownSchema = z
+  .object({ defaultName: z.string().trim().min(1).max(200), content: z.string().max(50_000_000) })
+  .strict()
+export type ExportMarkdownArgs = z.infer<typeof ExportMarkdownSchema>
+
+export const HistorySearchSchema = z.object({ query: z.string().trim().min(2).max(200) }).strict()
+export type HistorySearchArgs = z.infer<typeof HistorySearchSchema>
 export const HistoryDeleteSchema = z.object({ sessionId: z.string().min(1), cwd: z.string().optional() })
 export const HistoryRenameSchema = z.object({ sessionId: z.string().min(1), title: z.string().trim().min(1).max(200), cwd: z.string().optional() })
 export const HistorySummarizeSchema = z.object({ sessionId: z.string().min(1), cwd: z.string().min(1) })
@@ -306,6 +313,7 @@ export const AppPrefsPatchSchema = z
     showCavemanBadge: Flag,
     claudeInChrome: Flag,
     toolCardsExpanded: Flag,
+    costAlertUsd: z.number().min(0).max(100000),
     ultraSaver: Flag,
     ultraSaverParts: z.object({ caveman: Flag, model: Flag, compact: Flag }).partial().strict(),
     ultraSaverConfig: z
@@ -453,12 +461,18 @@ export interface ClaudriftApi {
     rename(args: ItemsRenameArgs): Promise<ItemMutationResult>
     delete(args: ItemsDeleteArgs): Promise<ItemMutationResult>
   }
-  dialog: { pickDirectory(): Promise<string | null> }
+  dialog: {
+    pickDirectory(): Promise<string | null>
+    /** Save dialog + write; resolves to the chosen path, or null when cancelled. */
+    exportMarkdown(args: ExportMarkdownArgs): Promise<string | null>
+  }
   history: {
     listProjects(): Promise<ProjectInfo[]>
     list(args: HistoryListArgs): Promise<HistorySessionInfo[]>
     /** Replayable events (user_message, assistant_message, tool_use, tool_result...) for a past session. */
     load(args: HistoryLoadArgs): Promise<SessionEvent[]>
+    /** Case-insensitive text search over saved transcripts (up to 50 hits, newest first). */
+    search(args: HistorySearchArgs): Promise<HistorySearchHit[]>
     /** Permanently deletes the session transcript. */
     delete(args: z.infer<typeof HistoryDeleteSchema>): Promise<void>
     rename(args: z.infer<typeof HistoryRenameSchema>): Promise<void>

@@ -9,6 +9,8 @@ export const IpcChannels = {
   sessionPermissionReply: 'session:permissionReply',
   sessionEvent: 'session:event',
   pickDirectory: 'dialog:pickDirectory',
+  exportMarkdown: 'export:markdown',
+  historySearch: 'history:search',
   historyListProjects: 'history:listProjects',
   historyList: 'history:list',
   historyLoad: 'history:load',

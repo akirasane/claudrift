@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
+  FileDown,
   ChevronRight,
   FolderOpen,
   GitBranch,
@@ -12,6 +13,7 @@ import {
   SquareTerminal,
   X
 } from 'lucide-react'
+import { exportConversation } from '@/features/chat/export-action'
 import { selectIsRunning } from '@/features/chat/model/selectors'
 import type { PaletteCommand } from '@/lib/commands/types'
 import { useChatStore } from '@/stores/chat-store'
@@ -48,6 +50,17 @@ export function buildActionCommands(qc: QueryClient, ctx: { activeConvId?: strin
       shortcut: ['Ctrl', '`'],
       icon: SquareTerminal,
       run: () => ws().toggleTerminal()
+    },
+    {
+      id: 'action:export-markdown',
+      title: 'Export conversation to Markdown...',
+      group: 'Actions',
+      keywords: ['save', 'download', 'transcript', 'md'],
+      icon: FileDown,
+      disabled: !activeConvId,
+      run: () => {
+        if (activeConvId) void exportConversation(activeConvId)
+      }
     },
     {
       id: 'action:interrupt',

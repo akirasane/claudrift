@@ -6,6 +6,7 @@ import { Button, Kbd, toast, Tooltip } from '@/components/ui'
 import { DeleteSessionDialog } from '@/features/sessions/DeleteSessionDialog'
 import { filterSessions, groupByDay } from '@/features/sessions/group'
 import { queryKeys, useSessions } from '@/features/sessions/queries'
+import { useTranscriptSearch } from '@/features/sessions/use-transcript-search'
 import { cn } from '@/lib/cn'
 import { stagger } from '@/lib/motion'
 import { isBusyConv, useWorkspaceStore } from '@/stores/workspace-store'
@@ -54,6 +55,7 @@ export function SessionList({ disabled }: { disabled?: boolean }): React.JSX.Ele
   const activeSessionId = conv?.meta.sessionId ?? conv?.resumeSessionId
   const filtered = useMemo(() => filterSessions(sessions ?? [], query), [sessions, query])
   const groups = useMemo(() => groupByDay(filtered), [filtered])
+  const transcript = useTranscriptSearch(query)
   const showSearch = (sessions?.length ?? 0) >= SEARCH_FROM || query !== ''
 
   const busyReason = (s: HistorySessionInfo): string | undefined => {
@@ -138,6 +140,36 @@ export function SessionList({ disabled }: { disabled?: boolean }): React.JSX.Ele
         )}
         {sessions && sessions.length > 0 && filtered.length === 0 && (
           <p className="px-2 py-3 text-center text-sm text-fg-3">No sessions match "{query}"</p>
+        )}
+        {query.trim().length >= 2 && (
+          <section aria-label="Matches in conversations" data-testid="transcript-hits" className="mb-1.5">
+            <h3 className="sticky top-0 z-[1] bg-bg-1 px-2 pb-0.5 pt-1.5 text-xs font-medium uppercase tracking-wide text-fg-3">
+              In conversations
+            </h3>
+            {transcript.searching && <p className="px-2 py-1 text-sm text-fg-3">Searching...</p>}
+            {!transcript.searching && transcript.hits.length === 0 && (
+              <p className="px-2 py-1 text-sm text-fg-3">No matches in saved conversations</p>
+            )}
+            <ul className="flex flex-col gap-0.5">
+              {transcript.hits.map((h) => (
+                <li key={h.sessionId}>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    data-testid="transcript-hit"
+                    onClick={() => void openSession({ sessionId: h.sessionId, title: h.title, cwd: h.cwd, lastModified: h.lastModified })}
+                    className="flex w-full flex-col rounded-sm px-2 py-1.5 text-left transition-colors duration-fast hover:bg-bg-3 focus-visible:bg-bg-3 disabled:opacity-45"
+                  >
+                    <span className="truncate text-base text-fg">{h.title}</span>
+                    <span className="line-clamp-2 break-words text-xs text-fg-3">{h.snippet}</span>
+                    <span className="truncate text-xs text-fg-3">
+                      {h.cwd.split(/[\\/]/).filter(Boolean).pop() ?? h.cwd} · {relativeTime(h.lastModified)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
         {groups.map((g) => (
           <section key={g.label} aria-label={g.label} className="mb-1.5">

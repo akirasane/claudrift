@@ -13,6 +13,8 @@ export interface PersistedTab {
   title?: string
   /** Last chosen mode, never Bypass (a restored tab starts in Default unless this is set). */
   mode?: PermissionMode
+  /** Token saver chosen for this chat; absent = follow the app default. */
+  saver?: boolean
 }
 export interface PersistedTabs {
   tabs: PersistedTab[]
@@ -23,7 +25,8 @@ export interface PersistedTabs {
 export function serializeTabs(
   tabs: TabRef[],
   activeConvId: string | undefined,
-  modes: Record<string, PermissionMode> = {}
+  modes: Record<string, PermissionMode> = {},
+  savers: Record<string, boolean> = {}
 ): PersistedTabs {
   const kept = tabs.filter((t) => !!t.sessionId)
   const active = kept.find((t) => t.convId === activeConvId)
@@ -35,7 +38,8 @@ export function serializeTabs(
       ...(t.title ? { title: t.title } : {}),
       ...(modes[t.convId] && modes[t.convId] !== 'default' && modes[t.convId] !== 'bypassPermissions'
         ? { mode: modes[t.convId] }
-        : {})
+        : {}),
+      ...(typeof savers[t.convId] === 'boolean' ? { saver: savers[t.convId] } : {})
     })),
     ...(active ? { activeConvId: `hist-${active.sessionId}` } : {})
   }
@@ -58,7 +62,8 @@ export function parseTabs(raw: string | null): PersistedTabs | undefined {
           ...(typeof o.title === 'string' && o.title ? { title: o.title } : {}),
           ...(PermissionModeSchema.safeParse(o.mode).success && o.mode !== 'bypassPermissions' && o.mode !== 'default'
             ? { mode: o.mode as PermissionMode }
-            : {})
+            : {}),
+          ...(typeof o.saver === 'boolean' ? { saver: o.saver } : {})
         })
       }
     }
@@ -80,7 +85,8 @@ export function readPersistedTabs(): PersistedTabs | undefined {
 function write(): void {
   try {
     const { tabs, activeConvId } = useWorkspaceStore.getState()
-    window.localStorage.setItem(TABS_KEY, JSON.stringify(serializeTabs(tabs, activeConvId, useChatStore.getState().modes)))
+    const { modes, savers } = useChatStore.getState()
+    window.localStorage.setItem(TABS_KEY, JSON.stringify(serializeTabs(tabs, activeConvId, modes, savers)))
   } catch {
     /* storage unavailable: tabs just will not come back */
   }
@@ -101,7 +107,7 @@ export function startTabPersistence(): () => void {
     schedule()
   })
   const offModes = useChatStore.subscribe((s, prev) => {
-    if (s.modes !== prev.modes) schedule()
+    if (s.modes !== prev.modes || s.savers !== prev.savers) schedule()
   })
   return () => {
     off()

@@ -5,6 +5,7 @@ import { fuzzyScore } from '../palette/fuzzy'
 export const FALLBACK_COMMANDS: SlashCommandInfo[] = [
   ['compact', 'Summarize the conversation to free up context', '[instructions]'],
   ['clear', 'Clear the conversation and start fresh', ''],
+  ['export', 'Save the conversation as a Markdown file', ''],
   ['context', 'Show context window usage', ''],
   ['cost', 'Show token usage and cost', ''],
   ['usage', 'Show plan usage limits', ''],

@@ -37,11 +37,15 @@ const api: ClaudriftApi = {
     rename: (args) => ipcRenderer.invoke(IpcChannels.itemsRename, args),
     delete: (args) => ipcRenderer.invoke(IpcChannels.itemsDelete, args)
   },
-  dialog: { pickDirectory: () => ipcRenderer.invoke(IpcChannels.pickDirectory) },
+  dialog: {
+    pickDirectory: () => ipcRenderer.invoke(IpcChannels.pickDirectory),
+    exportMarkdown: (args) => ipcRenderer.invoke(IpcChannels.exportMarkdown, args)
+  },
   history: {
     listProjects: () => ipcRenderer.invoke(IpcChannels.historyListProjects),
     list: (args) => ipcRenderer.invoke(IpcChannels.historyList, args),
     load: (args) => ipcRenderer.invoke(IpcChannels.historyLoad, args),
+    search: (args) => ipcRenderer.invoke(IpcChannels.historySearch, args),
     delete: (args) => ipcRenderer.invoke(IpcChannels.historyDelete, args),
     rename: (args) => ipcRenderer.invoke(IpcChannels.historyRename, args),
     summarize: (args) => ipcRenderer.invoke(IpcChannels.historySummarize, args),

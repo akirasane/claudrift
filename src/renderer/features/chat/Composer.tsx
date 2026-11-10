@@ -13,6 +13,7 @@ import { ModeMenu } from './mode/ModeMenu'
 import { dataUrl, readImages } from './attachments'
 import { applyMention, mentionAt } from './mentions'
 import { routeSlash } from './slash-router'
+import { exportConversation } from './export-action'
 import { toggleRemoteWithToast } from '@/features/limits/RemoteToggle'
 import { QueuedMessages } from './QueuedMessages'
 import { AddDirButton, ExtraDirsChips } from './ExtraDirsBar'
@@ -190,6 +191,9 @@ export function Composer({ convId, disabled = false, disabledReason }: ComposerP
         break
       case 'remote':
         void toggleRemoteWithToast(a.name)
+        break
+      case 'export':
+        void exportConversation(convId)
         break
     }
   }

@@ -151,6 +151,15 @@ export interface HistorySessionInfo {
   fileSize?: number
 }
 
+/** A saved transcript that contains the searched text. */
+export interface HistorySearchHit {
+  sessionId: string
+  cwd: string
+  title: string
+  snippet: string
+  lastModified: number
+}
+
 export interface AppInfo {
   claudePath?: string
   claudeVersion?: string

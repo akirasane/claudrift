@@ -8,6 +8,7 @@ import { CloseTabDialog } from '@/features/tabs/CloseTabDialog'
 import { BypassConfirmDialog } from '@/features/chat/mode/choose-mode'
 import { useAutoResume } from '@/features/autoresume/autoresume'
 import { readPersistedTabs, startTabPersistence } from '@/features/tabs/tab-persist'
+import { useCostAlerts } from '@/features/tabs/use-cost-alert'
 import { useBackgroundAttention } from '@/features/tabs/use-background-attention'
 import { useTabShortcuts } from '@/features/tabs/use-tab-shortcuts'
 import { initIpcBridge } from '@/lib/ipc-bridge'
@@ -104,6 +105,7 @@ function Shell(): React.JSX.Element {
   useFsChangedInvalidation()
   useTabShortcuts()
   useBackgroundAttention()
+  useCostAlerts()
 
   // Bring back last session's history tabs (transcripts load lazily), then keep tabs.v1 up to date.
   useEffect(() => {

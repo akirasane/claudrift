@@ -348,6 +348,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => {
         chat.createConv({ convId, cwd: p.cwd, resumeSessionId: p.sessionId })
         // Bypass is never persisted, so a restored tab is Default unless it saved another mode.
         if (p.mode) chat.seedMode(convId, p.mode)
+        if (typeof p.saver === 'boolean') chat.setSaver(convId, p.saver)
         restored.push({
           convId,
           cwd: p.cwd,
