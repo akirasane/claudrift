@@ -10,7 +10,7 @@ describe('assistant admin tools', () => {
     expect(server.name).toBe(ADMIN_SERVER_NAME)
     const tools = Object.keys((server.instance as unknown as { _registeredTools: Record<string, unknown> })._registeredTools)
     expect(tools).toEqual(
-      expect.arrayContaining(['set_app_settings', 'add_mcp_server', 'plugin_action', 'create_skill_command_or_agent', 'write_memory', 'write_claude_settings'])
+      expect.arrayContaining(['set_app_settings', 'add_mcp_server', 'plugin_action', 'create_skill_command_or_agent', 'write_memory', 'write_claude_settings', 'undo_last_config_change', 'list_config_backups'])
     )
   })
 
@@ -23,7 +23,50 @@ describe('assistant admin tools', () => {
 describe('assistant auto-allowed tools', () => {
   it('only lets read-only tools skip the prompt', () => {
     expect(ASSISTANT_AUTO_ALLOWED).toContain('mcp__claudrift-admin__list_plugins')
-    for (const t of ASSISTANT_AUTO_ALLOWED) expect(t).not.toMatch(/set_|add_|remove_|write_|create_|plugin_action|schedule_task|delete_/)
+    for (const t of ASSISTANT_AUTO_ALLOWED) expect(t).not.toMatch(/set_|add_|remove_|write_|undo_|create_|plugin_action|schedule_task|delete_/)
+  })
+})
+
+describe('assistant undo', () => {
+  it('keeps list_config_backups read-only and undo behind the prompt', () => {
+    expect(ASSISTANT_AUTO_ALLOWED).toContain('mcp__claudrift-admin__list_config_backups')
+    expect(ASSISTANT_AUTO_ALLOWED).not.toContain('mcp__claudrift-admin__undo_last_config_change')
+    expect(ASSISTANT_SYSTEM_PROMPT).toContain('undo_last_config_change')
+  })
+
+  it('restores the newest backup, and refuses when there is none or it would bring back risky keys', async () => {
+    const { mkdtemp, mkdir, readFile, writeFile, rm } = await import('node:fs/promises')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { createConfigPaths } = await import('../paths')
+    const { ConfigService, sha256 } = await import('./config-service')
+    const { undoLastChange } = await import('./assistant-tools')
+    const root = await mkdtemp(join(tmpdir(), 'claudrift-undo-'))
+    try {
+      const home = join(root, 'home')
+      await mkdir(join(home, '.claude'), { recursive: true })
+      const svc = new ConfigService(createConfigPaths({ CLAUDE_CONFIG_DIR: join(home, '.claude') }, home), join(root, 'bk'))
+      const ref = { kind: 'memory', scope: 'user' } as const
+      const file = join(home, '.claude', 'CLAUDE.md')
+      expect((await undoLastChange(svc, ref)).ok).toBe(false)
+      await writeFile(file, 'v0')
+      await svc.write(ref, 'v1', sha256('v0'), { forceBackup: true })
+      await new Promise((r) => setTimeout(r, 5))
+      await svc.write(ref, 'v2', sha256('v1'), { forceBackup: true })
+      expect((await undoLastChange(svc, ref)).ok).toBe(true)
+      expect(await readFile(file, 'utf8')).toBe('v1')
+
+      const sref = { kind: 'settings', scope: 'user' } as const
+      const sfile = join(home, '.claude', 'settings.json')
+      const risky = JSON.stringify({ hooks: { Stop: [] } })
+      await writeFile(sfile, risky)
+      await svc.write(sref, '{}', sha256(risky), { forceBackup: true })
+      const r = await undoLastChange(svc, sref)
+      expect(r.ok).toBe(false)
+      expect(r.message).toMatch(/hooks/)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })
 

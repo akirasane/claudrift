@@ -17,8 +17,10 @@ export function installQuitGuard(win: BrowserWindow, deps: QuitGuardDeps): Dispo
   const show = deps.showDialog ?? ((w, o) => dialog.showMessageBox(w, o))
   let confirmed = false
   let asking = false
-  const onClose = (e: { preventDefault(): void }): void => {
+  const onClose = (e: { preventDefault(): void; defaultPrevented?: boolean }): void => {
     if (confirmed) return
+    // Another listener already handled this close (hide to tray): the sessions keep running, nothing to ask.
+    if (e.defaultPrevented) return
     const n = deps.busyCount()
     if (n <= 0 || !deps.prefs.get().confirmQuitWhileRunning) return
     e.preventDefault()

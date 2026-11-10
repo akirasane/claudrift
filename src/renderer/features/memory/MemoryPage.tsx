@@ -12,6 +12,7 @@ import {
   Kbd,
   toast
 } from '@/components/ui'
+import { BackupsButton } from '@/components/BackupsButton'
 import { CodeEditor } from '@/components/editor'
 import { cn } from '@/lib/cn'
 import { configKeys } from '@/lib/config-queries'
@@ -227,6 +228,17 @@ function MemoryEditor({ scope, cwd, onDirtyChange }: EditorProps): React.JSX.Ele
             </Button>
           ))}
         </div>
+        <BackupsButton
+          fileRef={ref}
+          baseHash={base.hash}
+          dirty={dirty}
+          onRestored={(s) => {
+            setBase(s)
+            setDraft(s.text)
+            setConflict(null)
+            qc.setQueryData(configKeys.file(ref), s)
+          }}
+        />
         <Button variant="primary" size="sm" disabled={!dirty || saving} onClick={save}>
           Save
         </Button>

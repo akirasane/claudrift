@@ -31,6 +31,8 @@ export interface AppPrefs {
   autoUpdate: boolean
   /** Start Claudrift when you sign in to Windows (installed builds only). */
   startAtLogin: boolean
+  /** Closing the window hides Claudrift to the tray instead of quitting, so scheduled tasks keep running. */
+  keepRunningInTray: boolean
   /** Status bar: 5-hour / 7-day usage-limit bars. */
   showLimitsBar: boolean
   /** Status bar: the caveman plugin's token-savings badge. */
@@ -64,6 +66,7 @@ export const DEFAULT_PREFS: AppPrefs = {
   allowBypassMode: false,
   autoUpdate: true,
   startAtLogin: false,
+  keepRunningInTray: false,
   showLimitsBar: true,
   showCavemanBadge: true,
   claudeInChrome: false,
@@ -82,6 +85,7 @@ export type AppPrefsPatch = {
   allowBypassMode?: boolean
   autoUpdate?: boolean
   startAtLogin?: boolean
+  keepRunningInTray?: boolean
   showLimitsBar?: boolean
   showCavemanBadge?: boolean
   claudeInChrome?: boolean

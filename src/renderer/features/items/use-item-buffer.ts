@@ -27,6 +27,8 @@ export interface ItemBuffer {
   keepMine: () => void
   overwrite: () => Promise<void>
   revert: () => void
+  /** Take a snapshot written elsewhere (a restored backup) as the new base and text. */
+  adoptSnapshot: (s: ConfigSnapshot) => void
   dismissBanner: () => void
 }
 
@@ -133,6 +135,15 @@ export function useItemBuffer(ref: ConfigFileRef, readOnly: boolean): ItemBuffer
     if (baseRef.current) setText(baseRef.current.text)
   }, [])
 
+  const adoptSnapshot = useCallback(
+    (s: ConfigSnapshot) => {
+      qc.setQueryData(key, s)
+      adopt(s)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [adopt, qc]
+  )
+
   return {
     snapshot: base ?? snapshot,
     loading: q.isLoading,
@@ -148,6 +159,7 @@ export function useItemBuffer(ref: ConfigFileRef, readOnly: boolean): ItemBuffer
     keepMine,
     overwrite,
     revert,
+    adoptSnapshot,
     dismissBanner: () => setBanner(null)
   }
 }

@@ -187,7 +187,7 @@ export async function createAdminMcpServer(deps: AssistantDeps) {
           const cfg = deps.config()
           if (!cfg) return text('Config service is not ready yet.', true)
           if (a.scope !== 'user' && !a.project_dir) return text(NEEDS_PROJECT, true)
-          const r = await cfg.write(memoryRef(a.scope, a.project_dir), a.content, a.base_hash === HASH_NONE ? null : a.base_hash)
+          const r = await cfg.write(memoryRef(a.scope, a.project_dir), a.content, a.base_hash === HASH_NONE ? null : a.base_hash, { forceBackup: true })
           return r.ok ? text('Saved ' + r.snapshot.path + '.') : text(r.code === 'conflict' ? STALE : r.message, true)
         }
       ),
@@ -227,12 +227,59 @@ export async function createAdminMcpServer(deps: AssistantDeps) {
           if (risky.length) {
             return text('Refused: this would change ' + risky.join('; ') + '. These can run commands or remove safety checks, so the user has to change them in the Settings page. Make the other changes without them.', true)
           }
-          const r = await cfg.write(ref, merged.text, want)
+          const r = await cfg.write(ref, merged.text, want, { forceBackup: true })
           return r.ok ? text('Saved ' + r.snapshot.path + '.') : text(r.code === 'conflict' ? STALE : r.message, true)
+        }
+      ),
+
+      tool(
+        'list_config_backups',
+        'List the saved earlier versions (newest first) of a CLAUDE.md memory file or a Claude Code settings.json. Use it to see what undo_last_config_change would bring back.',
+        { file: z.enum(['memory', 'settings']), scope: z.enum(['user', 'project', 'projectDotClaude', 'local']), project_dir: projectArg },
+        async (a) => {
+          const cfg = deps.config()
+          if (!cfg) return text('Config service is not ready yet.', true)
+          const ref = fileRef(a.file, a.scope, a.project_dir)
+          if (typeof ref === 'string') return text(ref, true)
+          return json((await cfg.listBackups(ref)).map((b) => ({ saved: new Date(b.mtimeMs).toISOString(), bytes: b.size })))
+        }
+      ),
+      tool(
+        'undo_last_config_change',
+        'Put back the most recent earlier version of a CLAUDE.md memory file or a Claude Code settings.json (the version before the last change). The current content is backed up first, so calling it again redoes the change. For settings it refuses when the old version would change hooks or other keys the assistant may not set.',
+        { file: z.enum(['memory', 'settings']), scope: z.enum(['user', 'project', 'projectDotClaude', 'local']), project_dir: projectArg },
+        async (a) => {
+          const cfg = deps.config()
+          if (!cfg) return text('Config service is not ready yet.', true)
+          const ref = fileRef(a.file, a.scope, a.project_dir)
+          if (typeof ref === 'string') return text(ref, true)
+          const r = await undoLastChange(cfg, ref)
+          return text(r.message, !r.ok)
         }
       )
     ]
   })
+}
+
+function fileRef(file: 'memory' | 'settings', scope: MemoryScope, cwd?: string): ConfigFileRef | string {
+  if (scope !== 'user' && !cwd) return NEEDS_PROJECT
+  if (file === 'memory') return memoryRef(scope, cwd)
+  if (scope === 'projectDotClaude') return 'settings.json has no projectDotClaude scope. Use user, project or local.'
+  return settingsRef(scope, cwd)
+}
+
+/** Restore the newest backup of `ref`. For settings, the old version must not bring back risky keys the assistant may not set. */
+export async function undoLastChange(cfg: ConfigService, ref: ConfigFileRef): Promise<{ ok: boolean; message: string }> {
+  const [latest] = await cfg.listBackups(ref)
+  if (!latest) return { ok: false, message: 'There is no earlier version of this file to go back to.' }
+  const cur = await cfg.read(ref)
+  if (ref.kind === 'settings') {
+    const old = await cfg.readBackup(ref, latest.path)
+    const risky = riskyChanges(cur.exists ? cur.text : '', old)
+    if (risky.length) return { ok: false, message: 'Refused: going back would change ' + risky.join('; ') + '. The user has to do that in the Settings page.' }
+  }
+  const r = await cfg.restore(ref, latest.path, cur.hash)
+  return r.ok ? { ok: true, message: 'Restored the version from ' + new Date(latest.mtimeMs).toISOString() + ' to ' + r.snapshot.path + '.' } : { ok: false, message: r.message }
 }
 
 const HASH_NONE = 'none'
@@ -308,7 +355,8 @@ export const ASSISTANT_READ_ONLY_TOOLS = [
   'list_plugins',
   'list_skills_commands_agents',
   'read_memory',
-  'read_claude_settings'
+  'read_claude_settings',
+  'list_config_backups'
 ]
 export const ASSISTANT_AUTO_ALLOWED: string[] = [
   ...ASSISTANT_READ_ONLY_TOOLS.map((t) => `mcp__${ADMIN_SERVER_NAME}__${t}`),
@@ -318,7 +366,7 @@ export const ASSISTANT_AUTO_ALLOWED: string[] = [
 /** Appended to Claude Code's system prompt in the assistant chat only. */
 export const ASSISTANT_SYSTEM_PROMPT = `You are the Claudrift assistant, built into the Claudrift desktop app (a GUI for Claude Code). You help the user set up and change Claudrift and their Claude Code configuration. You are not working on a code project: this chat has no project of its own.
 
-What you can change, with the claudrift-admin tools: app preferences (get_app_settings / set_app_settings), MCP servers, plugins and marketplaces, skills / slash commands / subagents, CLAUDE.md memory files, and Claude Code settings.json (permissions, env, hooks, model). With the claudrift-schedule tools you can create, list and delete scheduled tasks (prompts or scripts that run while the app is open).
+What you can change, with the claudrift-admin tools: app preferences (get_app_settings / set_app_settings), MCP servers, plugins and marketplaces, skills / slash commands / subagents, CLAUDE.md memory files, and Claude Code settings.json (permissions, env, hooks, model). If a memory or settings change went wrong, undo_last_config_change brings back the previous version (list_config_backups shows what exists). With the claudrift-schedule tools you can create, list and delete scheduled tasks (prompts or scripts that run while the app is open).
 
 Rules:
 - Use these tools rather than editing config files by hand with Bash or Write.

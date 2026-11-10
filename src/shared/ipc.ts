@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { McpServerConfigSchema } from './config-schemas'
 import type {
+  ConfigBackupInfo,
   ConfigFileRef,
   ConfigItemList,
   ConfigSnapshot,
@@ -177,6 +178,15 @@ export const ConfigWriteSchema = z.object({
 })
 export type ConfigWriteArgs = z.infer<typeof ConfigWriteSchema>
 
+export const ConfigBackupsSchema = z.object({ ref: ConfigFileRefSchema })
+export const ConfigRestoreSchema = z.object({
+  ref: ConfigFileRefSchema,
+  backupPath: z.string().min(1).max(1000),
+  baseHash: z.string().nullable()
+})
+export type ConfigRestoreArgs = z.infer<typeof ConfigRestoreSchema>
+export const ConfigReadBackupSchema = z.object({ ref: ConfigFileRefSchema, backupPath: z.string().min(1).max(1000) })
+
 export const ConfigWatchProjectSchema = z.object({ cwd: z.string().nullable() })
 export type ConfigWatchProjectArgs = z.infer<typeof ConfigWatchProjectSchema>
 
@@ -309,6 +319,7 @@ export const AppPrefsPatchSchema = z
     allowBypassMode: Flag,
     autoUpdate: Flag,
     startAtLogin: Flag,
+  keepRunningInTray: Flag,
     showLimitsBar: Flag,
     showCavemanBadge: Flag,
     claudeInChrome: Flag,
@@ -554,6 +565,9 @@ export interface ClaudriftApi {
   config: {
     read(ref: ConfigFileRef): Promise<ConfigSnapshot>
     write(args: ConfigWriteArgs): Promise<ConfigWriteResult>
+    backups(ref: ConfigFileRef): Promise<ConfigBackupInfo[]>
+    restore(args: ConfigRestoreArgs): Promise<ConfigWriteResult>
+    readBackup(args: { ref: ConfigFileRef; backupPath: string }): Promise<string>
     watchProject(cwd: string | null): Promise<void>
     onChanged(cb: (p: FsChangedPayload) => void): () => void
   }

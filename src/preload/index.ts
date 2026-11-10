@@ -114,6 +114,9 @@ const api: ClaudriftApi = {
   config: {
     read: (ref) => ipcRenderer.invoke(IpcChannels.configRead, { ref }),
     write: (args) => ipcRenderer.invoke(IpcChannels.configWrite, args),
+    backups: (ref) => ipcRenderer.invoke(IpcChannels.configBackups, { ref }),
+    restore: (args) => ipcRenderer.invoke(IpcChannels.configRestore, args),
+    readBackup: (args) => ipcRenderer.invoke(IpcChannels.configReadBackup, args),
     watchProject: (cwd) => ipcRenderer.invoke(IpcChannels.configWatchProject, { cwd }),
     onChanged: (cb) => subscribe<FsChangedPayload>(IpcChannels.fsChanged, cb)
   },

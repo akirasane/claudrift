@@ -1,7 +1,7 @@
 import { app, ipcMain } from 'electron'
 import { join } from 'node:path'
-import { ConfigReadSchema, ConfigWatchProjectSchema, ConfigWriteSchema, IpcChannels, SettingsResolveSchema } from '../../shared/ipc'
-import type { ConfigSnapshot, ConfigWriteResult, FsChangedPayload, ResolvedSettingsView } from '../../shared/config'
+import { ConfigBackupsSchema, ConfigReadBackupSchema, ConfigReadSchema, ConfigRestoreSchema, ConfigWatchProjectSchema, ConfigWriteSchema, IpcChannels, SettingsResolveSchema } from '../../shared/ipc'
+import type { ConfigBackupInfo, ConfigSnapshot, ConfigWriteResult, FsChangedPayload, ResolvedSettingsView } from '../../shared/config'
 import { createConfigPaths } from '../paths'
 import type { ConfigPaths } from '../paths'
 import { ConfigService } from '../services/config-service'
@@ -43,6 +43,18 @@ export function registerConfigIpc(deps: ConfigIpcDeps): Disposer {
     const { ref, text, baseHash } = ConfigWriteSchema.parse(raw)
     return service.write(ref, text, baseHash)
   })
+  ipcMain.handle(IpcChannels.configBackups, (_e, raw: unknown): Promise<ConfigBackupInfo[]> => {
+    const { ref } = ConfigBackupsSchema.parse(raw)
+    return service.listBackups(ref)
+  })
+  ipcMain.handle(IpcChannels.configRestore, (_e, raw: unknown): Promise<ConfigWriteResult> => {
+    const { ref, backupPath, baseHash } = ConfigRestoreSchema.parse(raw)
+    return service.restore(ref, backupPath, baseHash)
+  })
+  ipcMain.handle(IpcChannels.configReadBackup, (_e, raw: unknown): Promise<string> => {
+    const { ref, backupPath } = ConfigReadBackupSchema.parse(raw)
+    return service.readBackup(ref, backupPath)
+  })
   ipcMain.handle(IpcChannels.configWatchProject, async (_e, raw: unknown): Promise<void> => {
     const { cwd } = ConfigWatchProjectSchema.parse(raw)
     await watcher.setProject(cwd)
@@ -55,6 +67,9 @@ export function registerConfigIpc(deps: ConfigIpcDeps): Disposer {
   const remove = removeHandlers(
     IpcChannels.configRead,
     IpcChannels.configWrite,
+    IpcChannels.configBackups,
+    IpcChannels.configRestore,
+    IpcChannels.configReadBackup,
     IpcChannels.configWatchProject,
     IpcChannels.settingsResolve
   )

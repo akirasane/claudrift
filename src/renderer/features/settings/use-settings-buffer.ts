@@ -29,6 +29,8 @@ export interface SettingsBuffer {
   /** Write again using the conflicting snapshot's hash. */
   overwrite: () => Promise<void>
   revert: () => void
+  /** Take a snapshot written elsewhere (a restored backup) as the new base and text. */
+  adoptSnapshot: (s: ConfigSnapshot) => void
   dismissBanner: () => void
 }
 
@@ -123,6 +125,15 @@ export function useSettingsBuffer(ref: ConfigFileRef): SettingsBuffer {
     if (baseRef.current) setText(baseRef.current.text)
   }, [])
 
+  const adoptSnapshot = useCallback(
+    (s: ConfigSnapshot) => {
+      qc.setQueryData(key, s)
+      adopt(s)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [adopt, qc]
+  )
+
   return {
     snapshot,
     loading: q.isLoading,
@@ -138,6 +149,7 @@ export function useSettingsBuffer(ref: ConfigFileRef): SettingsBuffer {
     keepMine,
     overwrite,
     revert,
+    adoptSnapshot,
     dismissBanner: () => setBanner(null)
   }
 }

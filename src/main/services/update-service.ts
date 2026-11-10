@@ -22,6 +22,8 @@ export interface UpdateServiceDeps {
   /** Background check interval. Default 6 h. */
   intervalMs?: number
   log?: (msg: string) => void
+  /** Called right before quitAndInstall, so the window close that follows is a real one. */
+  onQuitting?: () => void
 }
 
 export const UPDATE_START_DELAY_MS = 10_000
@@ -128,6 +130,7 @@ export class UpdateService {
   installNow(): boolean {
     if (!this.active || this.state.kind !== 'ready') return false
     try {
+      this.deps.onQuitting?.() // a hidden-to-tray window must really close for the installer to run
       this.deps.updater!.quitAndInstall(false, true)
       return true
     } catch (err) {

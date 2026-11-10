@@ -1,5 +1,5 @@
 import { autoUpdater } from 'electron-updater'
-import { app, BrowserWindow, Menu, Notification, powerMonitor, powerSaveBlocker, screen, shell } from 'electron'
+import { app, BrowserWindow, Menu, Notification, powerMonitor, powerSaveBlocker, screen, shell, Tray } from 'electron'
 import { join } from 'node:path'
 import { IpcChannels } from '../shared/ipc'
 import type { SessionEventPayload } from '../shared/ipc'
@@ -34,6 +34,7 @@ import { NotificationService } from './services/notification-service'
 import { PluginRegistry } from './services/plugin-registry'
 import { PrefsService } from './services/prefs-service'
 import { installQuitGuard } from './services/quit-guard'
+import { TrayController, installHideToTray } from './services/tray-service'
 import { SessionManager } from './services/session-manager'
 import { ClaudeCliService } from './services/claude-cli-service'
 import { UpdateService } from './services/update-service'
@@ -66,6 +67,8 @@ const userData = app.getPath('userData')
 let win: BrowserWindow | null = null
 let disposeIpc: Disposer | null = null
 let disposeWindow: Disposer | null = null
+/** A real quit is under way (tray Quit, app.quit(), updater, relaunch, OS shutdown): closing the window must not hide it. */
+let quitting = false
 
 function isHttpUrl(url: string): boolean {
   try {
@@ -98,7 +101,10 @@ const updates = new UpdateService({
   isPackaged: app.isPackaged,
   prefs,
   broadcast: (state) => getWindow()?.webContents.send(IpcChannels.updateState, state),
-  log: (m) => console.warn('[claudrift]', m)
+  log: (m) => console.warn('[claudrift]', m),
+  onQuitting: () => {
+    quitting = true
+  }
 })
 
 const limits = new LimitsService({
@@ -187,6 +193,21 @@ const claudeCli = new ClaudeCliService({
 const notifications = new NotificationService({ getWindow, prefs, manager })
 const autoResume = new AutoResumeMain({ powerSave: powerSaveBlocker, announce: (r) => notifications.announce(r) })
 
+const trayCtl = new TrayController({
+  createTray: () => new Tray(trayIconPath()),
+  buildMenu: (items) => Menu.buildFromTemplate(items as Electron.MenuItemConstructorOptions[]),
+  showWindow: () => showMainWindow(),
+  quit: () => {
+    // Busy sessions make the quit guard ask; the question needs a visible window.
+    if (manager.busyCount() > 0) focusMainWindow()
+    app.quit()
+  },
+  log: (m) => console.warn('[claudrift]', m)
+})
+function trayIconPath(): string {
+  return app.isPackaged ? join(process.resourcesPath, 'icon.ico') : join(app.getAppPath(), 'build', 'icon.ico')
+}
+
 function createWindow(): void {
   const restored = loadWindowState(
     windowStatePath(userData),
@@ -241,7 +262,19 @@ function createWindow(): void {
       e.preventDefault()
     }
   })
-  disposeWindow = combineWindowDisposers(trackWindowState(w, windowStatePath(userData)), installQuitGuard(w, { busyCount: () => manager.busyCount(), prefs }))
+  // Order matters: hide-to-tray first, then the quit guard (it skips a close that is already handled), then the reset below.
+  disposeWindow = combineWindowDisposers(
+    trackWindowState(w, windowStatePath(userData)),
+    installHideToTray(w, { context: () => ({ keepRunningInTray: prefs.get().keepRunningInTray, trayReady: trayCtl.ready, quitting }) }),
+    installQuitGuard(w, { busyCount: () => manager.busyCount(), prefs })
+  )
+  // The user cancelled the "sessions are still working" question: the quit is off, so later closes may hide again.
+  w.on('close', (e) => {
+    if (e.defaultPrevented) quitting = false
+  })
+  w.on('session-end', () => {
+    quitting = true
+  })
   w.on('closed', () => {
     disposeWindow?.()
     disposeWindow = null
@@ -269,6 +302,12 @@ function focusMainWindow(): void {
   if (w.isMinimized()) w.restore()
   w.show()
   w.focus()
+}
+
+/** Tray "Show": bring the window back, or make a new one if it is gone. */
+function showMainWindow(): void {
+  if (getWindow()) focusMainWindow()
+  else createWindow()
 }
 
 // Without the default menu, Ctrl+W no longer closes the window and Ctrl+R no longer reloads (P4 D11).
@@ -321,8 +360,14 @@ if (!app.requestSingleInstanceLock()) {
     applyLogin(prefs.get().startAtLogin)
     app.on('browser-window-focus', () => usageProbe.refreshNow())
     hotkey.apply(prefs.get().hotkey)
+    // Turning the tray off while the window is hidden would strand it, so show it again then.
+    const applyTray = (on: boolean): void => {
+      if (trayCtl.apply(on)) focusMainWindow()
+    }
+    applyTray(prefs.get().keepRunningInTray)
     prefs.onChange((p) => {
       applyLogin(p.startAtLogin)
+      applyTray(p.keepRunningInTray)
       hotkey.apply(p.hotkey)
       usageProbe.refreshNow()
     })
@@ -339,8 +384,12 @@ function shutdown(): void {
   disposeIpc = null
 }
 
-app.on('before-quit', shutdown)
+app.on('before-quit', () => {
+  quitting = true
+  shutdown()
+})
 app.on('will-quit', () => {
+  trayCtl.dispose()
   hotkey.dispose()
   updates.dispose()
   caveman.dispose()

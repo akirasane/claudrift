@@ -7,6 +7,10 @@ files:
   - out/**
   - package.json
   - '!**/*.map'
+extraResources:
+  # The tray icon is read from disk (outside the asar).
+  - from: build/icon.ico
+    to: icon.ico
 asar: true
 asarUnpack:
   - node_modules/node-pty/**

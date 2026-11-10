@@ -258,3 +258,70 @@ describe('write: Windows lock retry + own-write registry', () => {
     }
   })
 })
+
+describe('listBackups / restore / forceBackup', () => {
+  const settingsPath = (): string => join(home, '.claude', 'settings.json')
+  const seed = async (text: string): Promise<void> => {
+    await mkdir(join(home, '.claude'), { recursive: true })
+    await writeFile(settingsPath(), text)
+  }
+  let t = Date.UTC(2026, 0, 1)
+  const stepped = (): ConfigService =>
+    new ConfigService(createConfigPaths({ CLAUDE_CONFIG_DIR: join(home, '.claude') }, home), backups, { now: () => (t += 1000) })
+
+  it('lists backups newest first with the time from the file name', async () => {
+    await seed('{"v":0}')
+    const s = stepped()
+    await s.write(userSettings, '{"v":1}', sha256('{"v":0}'), { forceBackup: true })
+    await s.write(userSettings, '{"v":2}', sha256('{"v":1}'), { forceBackup: true })
+    const list = await s.listBackups(userSettings)
+    expect(list).toHaveLength(2)
+    expect(list[0]!.mtimeMs).toBeGreaterThan(list[1]!.mtimeMs)
+    expect(await readFile(list[0]!.path, 'utf8')).toBe('{"v":1}')
+    expect(await readFile(list[1]!.path, 'utf8')).toBe('{"v":0}')
+  })
+
+  it('returns an empty list when nothing was backed up', async () => {
+    expect(await svc.listBackups(userSettings)).toEqual([])
+  })
+
+  it('forceBackup backs up again within the same run', async () => {
+    await seed('{"v":0}')
+    const s = stepped()
+    const a = await s.write(userSettings, '{"v":1}', sha256('{"v":0}'))
+    const b = await s.write(userSettings, '{"v":2}', sha256('{"v":1}'))
+    const c = await s.write(userSettings, '{"v":3}', sha256('{"v":2}'), { forceBackup: true })
+    expect(a.ok && a.backupPath).toBeTruthy()
+    expect(b.ok && b.backupPath).toBeUndefined()
+    expect(c.ok && c.backupPath).toBeTruthy()
+  })
+
+  it('restores a backup through the normal write and backs up the current file', async () => {
+    await seed('{"v":0}')
+    const s = stepped()
+    await s.write(userSettings, '{"v":1}', sha256('{"v":0}'))
+    const [bak] = await s.listBackups(userSettings)
+    const r = await s.restore(userSettings, bak!.path, sha256('{"v":1}'))
+    expect(r.ok).toBe(true)
+    expect(await readFile(settingsPath(), 'utf8')).toBe('{"v":0}')
+    expect((await s.listBackups(userSettings)).length).toBe(2)
+  })
+
+  it('refuses a stale base hash, a foreign path and a backup of another file', async () => {
+    await seed('{"v":0}')
+    const s = stepped()
+    await s.write(userSettings, '{"v":1}', sha256('{"v":0}'))
+    const [bak] = await s.listBackups(userSettings)
+    const stale = await s.restore(userSettings, bak!.path, 'nope')
+    expect(!stale.ok && stale.code).toBe('conflict')
+    const outside = join(root, 'evil.bak')
+    await writeFile(outside, '{"x":1}')
+    const foreign = await s.restore(userSettings, outside, sha256('{"v":1}'))
+    expect(!foreign.ok && foreign.code).toBe('not_found')
+    const other = await s.restore(projSettings(), bak!.path, null)
+    expect(!other.ok && other.code).toBe('not_found')
+    expect(await readFile(settingsPath(), 'utf8')).toBe('{"v":1}')
+    await expect(s.readBackup(userSettings, outside)).rejects.toThrow()
+    expect(await s.readBackup(userSettings, bak!.path)).toBe('{"v":0}')
+  })
+})

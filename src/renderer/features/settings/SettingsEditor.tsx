@@ -2,6 +2,7 @@ import { AlertTriangle, Copy, RotateCcw, Save } from 'lucide-react'
 import { Tabs } from 'radix-ui'
 import { useEffect } from 'react'
 import type { ConfigFileRef } from '@shared/config'
+import { BackupsButton } from '@/components/BackupsButton'
 import { Button, Spinner, toast } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { setSettingsDirty } from './dirty-guard'
@@ -146,6 +147,7 @@ export function SettingsEditor({
       {tab !== 'precedence' && (
         <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
           {buf.dirty && <span className="mr-auto text-sm text-warn">Unsaved changes</span>}
+          <BackupsButton fileRef={fileRef} baseHash={buf.snapshot?.hash} dirty={buf.dirty} onRestored={buf.adoptSnapshot} />
           <Button variant="ghost" disabled={!buf.dirty} onClick={buf.revert}>
             <RotateCcw size={13} /> Revert
           </Button>

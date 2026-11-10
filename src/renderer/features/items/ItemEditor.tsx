@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import type { ConfigFileRef, ConfigItemSummary, ModelOption } from '@shared/config'
 import { keyRange } from '@shared/frontmatter'
 import { CodeEditor, type CodeEditorDiagnostic } from '@/components/editor'
+import { BackupsButton } from '@/components/BackupsButton'
 import { Button, Spinner, toast } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useAppInfo } from '@/features/sessions/queries'
@@ -207,6 +208,7 @@ export function ItemEditor({
             <Button variant="danger" disabled={!!busyLock || buf.loading} title={busyLock} onClick={() => setDeleting(true)}>
               <Trash2 size={13} /> Delete
             </Button>
+            <BackupsButton fileRef={item.ref} baseHash={buf.snapshot?.hash} dirty={buf.dirty} onRestored={buf.adoptSnapshot} />
             <Button variant="ghost" disabled={!buf.dirty} onClick={buf.revert}>
               <RotateCcw size={13} /> Revert
             </Button>

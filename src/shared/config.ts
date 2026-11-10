@@ -18,6 +18,12 @@ export interface ConfigSnapshot {
   hash: string | null
   mtimeMs?: number
 }
+export interface ConfigBackupInfo {
+  path: string
+  /** When the backup was taken (epoch ms). */
+  mtimeMs: number
+  size: number
+}
 export type ConfigErrorCode =
   | 'conflict'
   | 'invalid_json'

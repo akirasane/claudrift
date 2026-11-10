@@ -455,6 +455,14 @@ function TaskCard({ t, onEdit }: { t: ScheduledTask; onEdit: () => void }): Reac
 export function SchedulePage({ cwd }: { cwd?: string | undefined }): React.JSX.Element {
   const tasks = useTasks()
   const [draft, setDraft] = React.useState<Draft | null>(null)
+  const [elevated, setElevated] = React.useState(false)
+  React.useEffect(() => {
+    let live = true
+    void window.claudrift?.app?.info().then((i) => live && setElevated(i.elevated === true))
+    return () => {
+      live = false
+    }
+  }, [])
   return (
     <div data-testid="schedule-page" className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto px-6 py-5">
       <header className="flex items-center gap-3">
@@ -466,8 +474,14 @@ export function SchedulePage({ cwd }: { cwd?: string | undefined }): React.JSX.E
       </header>
       <p className="text-sm text-fg-3">
         Tasks run only while Claudrift is open and the PC is awake. Runs are headless: a prompt starts a session you can open from the sidebar, and
-        anything that needs approval is denied. You can also ask Claude in a chat to schedule something.
+        anything that needs approval is denied. You can also ask Claude in a chat to schedule something. To keep tasks running, turn on "Start when I
+        sign in" and "Keep running in the tray" in Preferences, System.
       </p>
+      {elevated && (
+        <div role="alert" data-testid="schedule-admin-banner" className="rounded-md border border-warn-border bg-warn-bg px-3 py-2 text-sm text-warn">
+          Claudrift is running as administrator, so scheduled scripts run with admin rights too.
+        </div>
+      )}
       {tasks === undefined ? null : tasks.length === 0 ? (
         <div className="ccw-fade-in flex flex-col items-center gap-1 py-12 text-center text-sm text-fg-3">
           <span>No scheduled tasks yet.</span>

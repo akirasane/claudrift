@@ -11,6 +11,25 @@ import type { AtomicFs } from './atomic-write'
 
 export const BACKUPS_KEPT = 5
 
+export interface ConfigBackup {
+  path: string
+  /** When the backup was taken (epoch ms). */
+  mtimeMs: number
+  size: number
+}
+
+function backupPrefix(path: string): string {
+  return `${createHash('sha1').update(fileKey(path)).digest('hex').slice(0, 12)}-${basename(path)}.`
+}
+
+/** Inverse of the `toISOString().replace(/[:.]/g, '-')` stamp in backup names. */
+function stampToMs(stamp: string): number | undefined {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/.exec(stamp)
+  if (!m) return undefined
+  const ms = Date.parse(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`)
+  return Number.isNaN(ms) ? undefined : ms
+}
+
 export function sha256(data: Buffer | string): string {
   return createHash('sha256').update(data).digest('hex')
 }
@@ -146,7 +165,7 @@ export class ConfigService {
     }
   }
 
-  async write(ref: ConfigFileRef, text: string, baseHash: string | null): Promise<ConfigWriteResult> {
+  async write(ref: ConfigFileRef, text: string, baseHash: string | null, opts: { forceBackup?: boolean } = {}): Promise<ConfigWriteResult> {
     let path: string
     try {
       path = this.resolvePath(ref)
@@ -182,7 +201,7 @@ export class ConfigService {
         if (eol) body = body.replace(/\r\n/g, '\n').replace(/\n/g, eol)
       }
 
-      const backupPath = current.exists ? await this.backupOnce(path) : undefined
+      const backupPath = current.exists ? await this.backupOnce(path, opts.forceBackup === true) : undefined
       const bytes = Buffer.from(body, 'utf8')
       await writeFileAtomic(path, bytes, {
         ...(this.opts.fs ? { fs: this.opts.fs } : {}),
@@ -198,12 +217,12 @@ export class ConfigService {
   }
 
   /** One backup per file per app run, in backupDir (never next to project files). Failure never blocks the write. */
-  private async backupOnce(path: string): Promise<string | undefined> {
+  private async backupOnce(path: string, force = false): Promise<string | undefined> {
     const key = fileKey(path)
-    if (this.backedUp.has(key)) return undefined
+    if (!force && this.backedUp.has(key)) return undefined
     try {
       await mkdir(this.backupDir, { recursive: true })
-      const prefix = `${createHash('sha1').update(key).digest('hex').slice(0, 12)}-${basename(path)}.`
+      const prefix = backupPrefix(path)
       const stamp = new Date((this.opts.now ?? Date.now)()).toISOString().replace(/[:.]/g, '-')
       const dest = join(this.backupDir, `${prefix}${stamp}.bak`)
       await copyFile(path, dest)
@@ -214,6 +233,57 @@ export class ConfigService {
       console.warn('[claudrift] config backup failed', err instanceof Error ? err.message : err)
       return undefined
     }
+  }
+
+  /** Backups of the file `ref` points to, newest first. Empty when there are none. */
+  async listBackups(ref: ConfigFileRef): Promise<ConfigBackup[]> {
+    const prefix = backupPrefix(this.resolvePath(ref))
+    let names: string[]
+    try {
+      names = (await readdir(this.backupDir)).filter((n) => n.startsWith(prefix) && n.endsWith('.bak'))
+    } catch {
+      return []
+    }
+    names.sort().reverse()
+    const out: ConfigBackup[] = []
+    for (const n of names) {
+      const path = join(this.backupDir, n)
+      try {
+        const st = await stat(path)
+        out.push({ path, mtimeMs: stampToMs(n.slice(prefix.length, -'.bak'.length)) ?? st.mtimeMs, size: st.size })
+      } catch {
+        /* pruned meanwhile */
+      }
+    }
+    return out
+  }
+
+  /** Text of one backup of `ref`. Throws when the path is not one of that file's backups. */
+  async readBackup(ref: ConfigFileRef, backupPath: string): Promise<string> {
+    const want = resolve(backupPath)
+    const hit = (await this.listBackups(ref)).find((b) => resolve(b.path) === want)
+    if (!hit) throw new Error('That backup does not belong to this file')
+    return stripBom((await readFile(hit.path)).toString('utf8'))
+  }
+
+  /** Put a backup back through the normal write (validation, conflict check, and a fresh backup of the current file). */
+  async restore(ref: ConfigFileRef, backupPath: string, baseHash: string | null): Promise<ConfigWriteResult> {
+    let known: ConfigBackup[]
+    try {
+      known = await this.listBackups(ref)
+    } catch (err) {
+      return { ok: false, code: 'bad_ref', message: err instanceof Error ? err.message : String(err) }
+    }
+    const want = resolve(backupPath)
+    const hit = known.find((b) => resolve(b.path) === want)
+    if (!hit) return { ok: false, code: 'not_found', message: 'That backup does not belong to this file' }
+    let text: string
+    try {
+      text = stripBom((await readFile(hit.path)).toString('utf8'))
+    } catch (err) {
+      return { ok: false, code: 'io', message: err instanceof Error ? err.message : String(err) }
+    }
+    return this.write(ref, text, baseHash, { forceBackup: true })
   }
 
   private async prune(prefix: string): Promise<void> {

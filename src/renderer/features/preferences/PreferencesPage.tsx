@@ -506,6 +506,9 @@ function SystemSection({ prefs, set }: { prefs: AppPrefs; set: (p: AppPrefsPatch
       <Row label="Start when I sign in" hint="Scheduled tasks only run while Claudrift is open. Installed Windows app only." htmlFor="start-login">
         <Toggle id="start-login" checked={prefs.startAtLogin} data-testid="start-login" onCheckedChange={(v) => set({ startAtLogin: v })} />
       </Row>
+      <Row label="Keep running in the tray" hint="Closing the window hides Claudrift to the tray icon so scheduled tasks keep running. Use Quit in the tray menu to exit." htmlFor="keep-tray">
+        <Toggle id="keep-tray" checked={prefs.keepRunningInTray} data-testid="keep-tray" onCheckedChange={(v) => set({ keepRunningInTray: v })} />
+      </Row>
       {win && (
         <Row
           label={elevated ? 'Running as administrator' : 'Run as administrator'}
