@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { cronError } from '../../shared/cron'
 import { SCHEDULE_MODES, describeWhen } from '../../shared/schedule'
 import type { ScheduleInput, ScheduleMode, ScheduleWhen, ScheduledTask } from '../../shared/schedule'
 
@@ -14,7 +15,12 @@ const text = (t: string, isError = false) => ({ content: [{ type: 'text' as cons
 export const SCHEDULE_SERVER_NAME = 'claudrift-schedule'
 
 /** Turns the flat tool arguments into a ScheduleWhen, or an error message the model can act on. */
-export function parseWhen(a: { when_type: 'once' | 'interval' | 'daily'; at?: string; every_minutes?: number; time?: string; days?: number[] }): ScheduleWhen | string {
+export function parseWhen(a: { when_type: 'once' | 'interval' | 'daily' | 'cron'; at?: string; every_minutes?: number; time?: string; days?: number[]; cron?: string }): ScheduleWhen | string {
+  if (a.when_type === 'cron') {
+    if (!a.cron?.trim()) return 'For when_type "cron", pass `cron` as a 5-field expression (minute hour day-of-month month day-of-week), e.g. "*/15 9-17 * * 1-5".'
+    const err = cronError(a.cron)
+    return err ?? { type: 'cron', expr: a.cron.trim() }
+  }
   if (a.when_type === 'once') {
     const ms = a.at ? new Date(a.at).getTime() : NaN
     if (!Number.isFinite(ms)) return 'For when_type "once", pass `at` as a local date-time like 2026-03-01T14:30.'
@@ -48,7 +54,8 @@ export async function createScheduleMcpServer(api: ScheduleApi, defaultCwd: stri
         {
           name: z.string().describe('Short title for the task'),
           prompt: z.string().describe('The prompt Claude runs when the task fires'),
-          when_type: z.enum(['once', 'interval', 'daily']),
+          when_type: z.enum(['once', 'interval', 'daily', 'cron']),
+          cron: z.string().optional().describe('cron: 5-field expression "minute hour day-of-month month day-of-week" in local time, e.g. "*/15 9-17 * * 1-5"'),
           at: z.string().optional().describe('once: local date-time, e.g. 2026-03-01T14:30'),
           every_minutes: z.number().int().min(1).optional().describe('interval: minutes between runs'),
           time: z.string().optional().describe('daily: local time HH:MM (24 hour)'),

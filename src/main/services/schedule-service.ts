@@ -12,6 +12,11 @@ export const MISSED_GRACE_MS = 2 * 60_000
 const SCRIPT_TIMEOUT_MS = 10 * 60_000
 const SESSION_TIMEOUT_MS = 30 * 60_000
 const OUTPUT_CAP = 20_000
+/** A run that finds every session slot taken waits and retries this often, for at most QUEUE_MAX_MS. */
+export const QUEUE_RETRY_MS = 30_000
+export const QUEUE_MAX_MS = 10 * 60_000
+export const WAITING_SUMMARY = 'Waiting for a free session'
+const isCapError = (err: unknown): boolean => err instanceof Error && err.message.startsWith('Session cap reached')
 
 export interface ScriptResult {
   code: number | null
@@ -46,7 +51,9 @@ export function runShellScript(command: string, cwd: string, timeoutMs = SCRIPT_
 
 export interface ScheduleServiceDeps {
   file: string
-  start(args: { cwd: string; prompt: string; permissionMode: ScheduleMode }): Promise<{ localId: string }>
+  start(args: { cwd: string; prompt: string; permissionMode: ScheduleMode; maxTurns?: number; maxCostUsd?: number }): Promise<{ localId: string }>
+  /** Test seam for the wait between session-cap retries. */
+  sleep?: (ms: number) => Promise<void>
   close(localId: string): void
   denyPermission(localId: string, reqId: string): void
   broadcast(tasks: ScheduledTask[]): void
@@ -63,6 +70,7 @@ interface ActiveRun {
   runId: string
   timer: ReturnType<typeof setTimeout>
   sessionId?: string
+  maxCostUsd?: number
   done: boolean
 }
 
@@ -80,6 +88,7 @@ export class ScheduleService {
   private timer: ReturnType<typeof setInterval> | undefined
   private writeChain: Promise<unknown> = Promise.resolve()
   private now: () => number
+  private disposed = false
 
   constructor(private deps: ScheduleServiceDeps) {
     this.now = deps.now ?? Date.now
@@ -157,6 +166,7 @@ export class ScheduleService {
   }
 
   dispose(): void {
+    this.disposed = true
     if (this.timer) clearInterval(this.timer)
     this.timer = undefined
     for (const [id, a] of [...this.active]) {
@@ -179,6 +189,8 @@ export class ScheduleService {
       permissionMode: input.permissionMode,
       when: input.when,
       ...(input.catchUp ? { catchUp: true } : {}),
+      ...(input.maxTurns ? { maxTurns: input.maxTurns } : {}),
+      ...(input.maxCostUsd ? { maxCostUsd: input.maxCostUsd } : {}),
       createdAt: now,
       runs: []
     }
@@ -190,7 +202,9 @@ export class ScheduleService {
         action: input.action,
         permissionMode: input.permissionMode,
         when: input.when,
-        catchUp: input.catchUp || undefined
+        catchUp: input.catchUp || undefined,
+        maxTurns: input.maxTurns,
+        maxCostUsd: input.maxCostUsd
       })
     } else {
       this.tasks.push(t)
@@ -257,13 +271,47 @@ export class ScheduleService {
         }
         prompt = `${t.action.followUpPrompt}\n\nOutput of \`${t.action.command}\` (exit code ${res.code}):\n\`\`\`\n${res.output}\n\`\`\``
       }
-      const { localId } = await this.deps.start({ cwd: t.cwd, prompt, permissionMode: t.permissionMode })
+      const { localId } = await this.startWhenFree(t, run, {
+        cwd: t.cwd,
+        prompt,
+        permissionMode: t.permissionMode,
+        ...(t.maxTurns ? { maxTurns: t.maxTurns } : {}),
+        ...(t.maxCostUsd ? { maxCostUsd: t.maxCostUsd } : {})
+      })
       const timer = setTimeout(() => this.endSession(localId, 'error', 'Timed out after 30 minutes.'), SESSION_TIMEOUT_MS)
-      this.active.set(localId, { taskId: t.id, runId: run.id, timer, done: false })
+      this.active.set(localId, { taskId: t.id, runId: run.id, timer, done: false, ...(t.maxCostUsd ? { maxCostUsd: t.maxCostUsd } : {}) })
     } catch (err) {
       this.finish(t, run, 'error', clip(err instanceof Error ? err.message : String(err)))
     }
     return true
+  }
+
+  /**
+   * Starts the session; when every slot a scheduled run may use is taken, the run waits (status stays 'running',
+   * summary WAITING_SUMMARY) and retries every QUEUE_RETRY_MS for up to QUEUE_MAX_MS. Other start errors fail at once.
+   */
+  private async startWhenFree(t: ScheduledTask, run: ScheduleRun, args: Parameters<ScheduleServiceDeps['start']>[0]): Promise<{ localId: string }> {
+    const began = this.now()
+    const sleep = this.deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms).unref?.()))
+    for (;;) {
+      try {
+        const res = await this.deps.start(args)
+        if (run.summary === WAITING_SUMMARY) {
+          delete run.summary
+          this.persist()
+        }
+        return res
+      } catch (err) {
+        if (!isCapError(err)) throw err
+        if (this.now() - began >= QUEUE_MAX_MS) throw new Error('No free session after waiting 10 minutes.')
+        if (run.summary !== WAITING_SUMMARY) {
+          run.summary = WAITING_SUMMARY
+          this.persist()
+        }
+        await sleep(QUEUE_RETRY_MS)
+        if (this.disposed || !this.tasks.includes(t)) throw new Error('Cancelled while waiting for a free session.')
+      }
+    }
   }
 
   /** Feed every session event here; events of scheduled sessions end or steer their run. */
@@ -271,13 +319,24 @@ export class ScheduleService {
     const a = this.active.get(localId)
     if (!a || a.done) return
     switch (e.t) {
-      case 'init':
+      case 'init': {
         a.sessionId = e.sessionId
+        // Recorded at once (not only at the end) so the Remote Control mirror can tell this transcript is a scheduled run.
+        const run = this.tasks.find((x) => x.id === a.taskId)?.runs.find((r) => r.id === a.runId)
+        if (run) {
+          run.sessionId = e.sessionId
+          this.persist()
+        }
         break
+      }
       case 'permission_request':
         this.deps.denyPermission(localId, e.reqId)
         break
       case 'result':
+        if (a.maxCostUsd !== undefined && e.costUsd > a.maxCostUsd) {
+          this.endSession(localId, 'error', `Cost limit exceeded: $${e.costUsd.toFixed(2)} of $${a.maxCostUsd.toFixed(2)}.`, e.costUsd)
+          break
+        }
         this.endSession(localId, e.isError ? 'error' : 'ok', clip(e.resultText ?? (e.isError ? 'The run ended with an error.' : 'Done.')), e.costUsd)
         break
       case 'error':

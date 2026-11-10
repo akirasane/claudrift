@@ -165,7 +165,11 @@ function getItems(): ItemsService {
 // Timed prompts and scripts. Runs headless sessions through the same manager; only fires while the app is open.
 const schedule: ScheduleService = new ScheduleService({
   file: schedulePath(userData),
-  start: (a) => manager.start({ cwd: a.cwd, prompt: a.prompt, permissionMode: a.permissionMode }, { internal: true }),
+  start: (a) =>
+    manager.start(
+      { cwd: a.cwd, prompt: a.prompt, permissionMode: a.permissionMode },
+      { internal: true, ...(a.maxTurns ? { maxTurns: a.maxTurns } : {}), ...(a.maxCostUsd ? { maxBudgetUsd: a.maxCostUsd } : {}) }
+    ),
   close: (id) => manager.close(id),
   denyPermission: (localId, reqId) => manager.permissionReply({ localId, reqId, decision: 'deny' }),
   broadcast: (tasks) => getWindow()?.webContents.send(IpcChannels.scheduleState, tasks),
@@ -302,7 +306,7 @@ if (!app.requestSingleInstanceLock()) {
         setEnabled: (id, en) => schedule.setEnabled(id, en),
         run: (id) => schedule.run(id)
       },
-      remote: { list: () => remote.list(), start: (a) => remote.start(a), stop: (cwd) => remote.stop(cwd), trust: (a) => trustWorkspace(a.cwd) }
+      remote: { list: () => remote.list(), start: (a) => remote.start(a), stop: (cwd) => remote.stop(cwd), trust: (a) => trustWorkspace(a.cwd), allowBypass: () => prefs.get().allowBypassMode }
     })
     updates.start()
     caveman.start()

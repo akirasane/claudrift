@@ -8,6 +8,9 @@ import type { PluginRegistry } from './plugin-registry'
 import { BYPASS_DISABLED, startSdkSession, type AdapterOptions, type AdapterSession, type PermissionModeName } from './sdk-adapter'
 
 export const MAX_SESSIONS = 5
+/** Scheduled (internal) runs only start while fewer than this many sessions are live, so one slot stays free for user chats. */
+export const SCHEDULED_SESSION_LIMIT = MAX_SESSIONS - 1
+export const SESSION_CAP_MESSAGE = 'Session cap reached'
 
 export interface SessionManagerDeps {
   /** Test seam; defaults to the real SDK adapter. */
@@ -58,13 +61,16 @@ export class SessionManager {
   ) {}
 
   /** `internal` sessions (scheduled runs) get no extra MCP servers, so a scheduled task cannot schedule more tasks. */
-  async start(args: SessionStartArgs, opts: { internal?: boolean } = {}): Promise<{ localId: string }> {
-    if (this.sessions.size >= MAX_SESSIONS) throw new Error(`Session cap reached (${MAX_SESSIONS})`)
+  async start(args: SessionStartArgs, opts: { internal?: boolean; maxTurns?: number; maxBudgetUsd?: number } = {}): Promise<{ localId: string }> {
+    // Scheduled runs leave the last free slot to user chats.
+    const limit = opts.internal ? SCHEDULED_SESSION_LIMIT : MAX_SESSIONS
+    const capped = (): Error => new Error(`${SESSION_CAP_MESSAGE} (${limit})`)
+    if (this.sessions.size >= limit) throw capped()
     // Checked here: the SDK's own spawn error for a bad cwd is misleading ("failed to launch ... libc").
     await assertDirectory(args.cwd)
     const extraDirs = args.additionalDirectories ?? []
     for (const d of extraDirs) await assertDirectory(d)
-    if (this.sessions.size >= MAX_SESSIONS) throw new Error(`Session cap reached (${MAX_SESSIONS})`)
+    if (this.sessions.size >= limit) throw capped()
     const allowBypass = this.deps.allowBypass?.() === true
     const saver = this.deps.saver?.(args.saver)
     // An explicit model for this chat always beats the saver's cheaper default.
@@ -93,6 +99,8 @@ export class SessionManager {
         ...(appendPrompt ? { appendSystemPrompt: appendPrompt } : {}),
         ...(extraAllowed?.length ? { extraAllowedTools: extraAllowed } : {}),
         ...(args.permissionMode ? { permissionMode: args.permissionMode } : {}),
+        ...(opts.internal && opts.maxTurns ? { maxTurns: opts.maxTurns } : {}),
+        ...(opts.internal && opts.maxBudgetUsd ? { maxBudgetUsd: opts.maxBudgetUsd } : {}),
         ...(allowBypass ? { allowBypass: true } : {}),
         ...(this.deps.chrome?.() === true ? { chrome: true } : {}),
         ...(args.resumeId ? { resumeId: args.resumeId } : {}),

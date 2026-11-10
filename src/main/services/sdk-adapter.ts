@@ -63,6 +63,10 @@ export interface AdapterOptions {
   extraAllowedTools?: string[]
   /** Extra folders added to the session (`--add-dir`). */
   additionalDirectories?: string[]
+  /** Stop the run after this many agentic turns (scheduled runs only). */
+  maxTurns?: number
+  /** Stop the run once it has cost this many US dollars (scheduled runs only). */
+  maxBudgetUsd?: number
   /** UUID stamped on the initial user message (rewind target). */
   messageId?: string
   onEvent: (e: SessionEvent) => void
@@ -723,6 +727,8 @@ export async function startSdkSession(opts: AdapterOptions): Promise<AdapterSess
     ...(opts.model ? { model: opts.model } : {}),
     ...(opts.resumeId ? { resume: opts.resumeId, forkSession: opts.fork === true } : {}),
     ...(opts.chrome ? { extraArgs: { chrome: null } } : {}),
+    ...(opts.maxTurns ? { maxTurns: opts.maxTurns } : {}),
+    ...(opts.maxBudgetUsd ? { maxBudgetUsd: opts.maxBudgetUsd } : {}),
     ...(opts.mcpServers ? { mcpServers: opts.mcpServers } : {}),
     ...(opts.appendSystemPrompt
       ? { systemPrompt: { type: 'preset' as const, preset: 'claude_code' as const, append: opts.appendSystemPrompt } }

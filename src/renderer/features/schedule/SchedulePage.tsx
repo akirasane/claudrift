@@ -1,5 +1,6 @@
-import { CalendarClock, Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, FileText, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import * as React from 'react'
+import { cronError } from '@shared/cron'
 import { MAX_SCHEDULE_RUNS, SCHEDULE_MODES, describeWhen } from '@shared/schedule'
 import type { ScheduleInput, ScheduleMode, ScheduledTask } from '@shared/schedule'
 import {
@@ -17,6 +18,7 @@ import {
   toast
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 const MODE_LABEL: Record<ScheduleMode, string> = {
   default: 'Ask (unattended runs deny anything that needs approval)',
@@ -60,13 +62,16 @@ interface Draft {
   prompt: string
   command: string
   followUp: string
-  whenType: 'daily' | 'interval' | 'once'
+  whenType: 'daily' | 'interval' | 'once' | 'cron'
   time: string
   days: number[]
   everyMinutes: string
+  cron: string
   at: string
   mode: ScheduleMode
   catchUp: boolean
+  maxTurns: string
+  maxCostUsd: string
   enabled: boolean
 }
 
@@ -82,9 +87,12 @@ function toDraft(cwd: string, t?: ScheduledTask): Draft {
     time: '09:00',
     days: [],
     everyMinutes: '60',
+    cron: '*/15 9-17 * * 1-5',
     at: localInput(Date.now() + 3_600_000),
     mode: 'default',
     catchUp: false,
+    maxTurns: '',
+    maxCostUsd: '',
     enabled: true
   }
   if (!t) return base
@@ -95,13 +103,17 @@ function toDraft(cwd: string, t?: ScheduledTask): Draft {
     cwd: t.cwd,
     enabled: t.enabled,
     catchUp: t.catchUp === true,
+    maxTurns: t.maxTurns ? String(t.maxTurns) : '',
+    maxCostUsd: t.maxCostUsd ? String(t.maxCostUsd) : '',
     mode: t.permissionMode,
     ...(t.action.kind === 'prompt' ? { kind: 'prompt', prompt: t.action.prompt } : { kind: 'script', command: t.action.command, followUp: t.action.followUpPrompt ?? '' }),
     ...(t.when.type === 'daily'
       ? { whenType: 'daily', time: t.when.time, days: t.when.days }
       : t.when.type === 'interval'
         ? { whenType: 'interval', everyMinutes: String(t.when.everyMinutes) }
-        : { whenType: 'once', at: localInput(t.when.at) })
+        : t.when.type === 'cron'
+          ? { whenType: 'cron', cron: t.when.expr }
+          : { whenType: 'once', at: localInput(t.when.at) })
   }
 }
 
@@ -113,6 +125,8 @@ function toInput(d: Draft): ScheduleInput {
     cwd: d.cwd,
     permissionMode: d.mode,
     catchUp: d.catchUp,
+    ...(Number(d.maxTurns) >= 1 ? { maxTurns: Math.round(Number(d.maxTurns)) } : {}),
+    ...(Number(d.maxCostUsd) > 0 ? { maxCostUsd: Number(d.maxCostUsd) } : {}),
     action:
       d.kind === 'prompt'
         ? { kind: 'prompt', prompt: d.prompt }
@@ -122,7 +136,9 @@ function toInput(d: Draft): ScheduleInput {
         ? { type: 'daily', time: d.time, days: d.days }
         : d.whenType === 'interval'
           ? { type: 'interval', everyMinutes: Math.round(Number(d.everyMinutes)) }
-          : { type: 'once', at: new Date(d.at).getTime() }
+          : d.whenType === 'cron'
+            ? { type: 'cron', expr: d.cron.trim() }
+            : { type: 'once', at: new Date(d.at).getTime() }
   }
 }
 
@@ -152,8 +168,17 @@ function TaskDialog({ draft, onClose }: { draft: Draft | null; onClose: () => vo
       setBusy(false)
     }
   }
+  const cronMsg = d.whenType === 'cron' ? cronError(d.cron) : null
+  const turnsOk = d.maxTurns === '' || (Number.isInteger(Number(d.maxTurns)) && Number(d.maxTurns) >= 1 && Number(d.maxTurns) <= 200)
+  const costOk = d.maxCostUsd === '' || Number(d.maxCostUsd) > 0
   const ready =
-    d.name.trim() && d.cwd.trim() && (d.kind === 'prompt' ? d.prompt.trim() : d.command.trim()) && (d.whenType !== 'interval' || Number(d.everyMinutes) >= 1)
+    d.name.trim() &&
+    d.cwd.trim() &&
+    (d.kind === 'prompt' ? d.prompt.trim() : d.command.trim()) &&
+    (d.whenType !== 'interval' || Number(d.everyMinutes) >= 1) &&
+    !cronMsg &&
+    turnsOk &&
+    costOk
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent data-testid="schedule-dialog" className="max-h-[88vh] w-[560px] overflow-y-auto">
@@ -207,6 +232,7 @@ function TaskDialog({ draft, onClose }: { draft: Draft | null; onClose: () => vo
                 <option value="daily">Daily / weekly</option>
                 <option value="interval">Every N minutes</option>
                 <option value="once">Once</option>
+                <option value="cron">Cron expression</option>
               </select>
             </Field>
             {d.whenType === 'daily' && (
@@ -225,12 +251,29 @@ function TaskDialog({ draft, onClose }: { draft: Draft | null; onClose: () => vo
                 />
               </Field>
             )}
+            {d.whenType === 'cron' && (
+              <Field label="Cron (minute hour day-of-month month day-of-week)">
+                <Input
+                  mono
+                  data-testid="task-cron"
+                  value={d.cron}
+                  aria-invalid={cronMsg ? true : undefined}
+                  className="w-64"
+                  onChange={(e) => set({ cron: e.target.value })}
+                />
+              </Field>
+            )}
             {d.whenType === 'once' && (
               <Field label="At">
                 <Input data-testid="task-at" type="datetime-local" value={d.at} className="w-52" onChange={(e) => set({ at: e.target.value })} />
               </Field>
             )}
           </div>
+          {cronMsg && (
+            <p role="alert" data-testid="task-cron-error" className="text-sm text-danger">
+              {cronMsg}
+            </p>
+          )}
           {d.whenType === 'daily' && (
             <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Days">
               {DAYS.map((name, i) => {
@@ -264,6 +307,28 @@ function TaskDialog({ draft, onClose }: { draft: Draft | null; onClose: () => vo
               ))}
             </select>
           </Field>
+          <div className="flex gap-3">
+            <Field label="Max turns (optional, 1-200)">
+              <Input
+                data-testid="task-max-turns"
+                inputMode="numeric"
+                value={d.maxTurns}
+                aria-invalid={turnsOk ? undefined : true}
+                className="w-32"
+                onChange={(e) => set({ maxTurns: e.target.value.replace(/[^\d]/g, '') })}
+              />
+            </Field>
+            <Field label="Max cost in USD (optional)">
+              <Input
+                data-testid="task-max-cost"
+                inputMode="decimal"
+                value={d.maxCostUsd}
+                aria-invalid={costOk ? undefined : true}
+                className="w-32"
+                onChange={(e) => set({ maxCostUsd: e.target.value.replace(/[^\d.]/g, '') })}
+              />
+            </Field>
+          </div>
           {d.whenType !== 'interval' && (
             <label className="flex items-center gap-2 text-sm text-fg-2">
               <input type="checkbox" data-testid="task-catch-up" checked={d.catchUp} onChange={(e) => set({ catchUp: e.target.checked })} />
@@ -290,6 +355,27 @@ function TaskDialog({ draft, onClose }: { draft: Draft | null; onClose: () => vo
 }
 
 const when = (ms?: number): string => (ms ? new Date(ms).toLocaleString() : 'never')
+
+function OpenTranscript({ t, r }: { t: ScheduledTask; r: ScheduledTask['runs'][number] }): React.JSX.Element | null {
+  if (!r.sessionId) return null
+  const sessionId = r.sessionId
+  return (
+    <Button
+      size="icon-sm"
+      variant="ghost"
+      aria-label={`Open transcript of ${t.name}, ${when(r.startedAt)}`}
+      title="Open transcript"
+      data-testid="run-open-transcript"
+      onClick={() =>
+        void useWorkspaceStore
+          .getState()
+          .openSession({ sessionId, title: `${t.name} (${when(r.startedAt)})`, cwd: t.cwd, lastModified: r.endedAt ?? r.startedAt })
+      }
+    >
+      <FileText size={13} aria-hidden />
+    </Button>
+  )
+}
 
 function TaskCard({ t, onEdit }: { t: ScheduledTask; onEdit: () => void }): React.JSX.Element {
   const last = t.runs[0]
@@ -340,15 +426,23 @@ function TaskCard({ t, onEdit }: { t: ScheduledTask; onEdit: () => void }): Reac
         </Button>
       </div>
       {last?.summary && <p className="mt-2 line-clamp-2 border-t border-border pt-2 text-sm text-fg-2">{last.summary}</p>}
+      {t.runs.length === 1 && last?.sessionId && (
+        <div className="mt-1 flex items-center gap-1 text-sm text-fg-3">
+          Transcript <OpenTranscript t={t} r={last} />
+        </div>
+      )}
       {t.runs.length > 1 && (
         <details className="mt-1 text-sm text-fg-3">
           <summary className="cursor-pointer">History ({t.runs.length} of {MAX_SCHEDULE_RUNS})</summary>
           <ul className="mt-1 flex flex-col gap-0.5">
             {t.runs.map((r) => (
-              <li key={r.id} className="truncate">
-                <span className={STATUS_STYLE[r.status]}>{r.status}</span> {when(r.startedAt)}
-                {r.costUsd !== undefined ? ` · $${r.costUsd.toFixed(2)}` : ''}
-                {r.summary ? ` · ${r.summary}` : ''}
+              <li key={r.id} className="flex items-center gap-1">
+                <span className="min-w-0 flex-1 truncate">
+                  <span className={STATUS_STYLE[r.status]}>{r.status}</span> {when(r.startedAt)}
+                  {r.costUsd !== undefined ? ` · $${r.costUsd.toFixed(2)}` : ''}
+                  {r.summary ? ` · ${r.summary}` : ''}
+                </span>
+                <OpenTranscript t={t} r={r} />
               </li>
             ))}
           </ul>

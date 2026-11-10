@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { cronError, nextCronAfter } from './cron'
 
 // Scheduled tasks: a prompt or a script that runs at a set time while the app is open.
 
@@ -13,6 +14,8 @@ export type ScheduleWhen =
   | { type: 'interval'; everyMinutes: number }
   /** `time` is local "HH:MM". `days` are 0 (Sunday) to 6; empty means every day. */
   | { type: 'daily'; time: string; days: number[] }
+  /** Standard 5-field cron (minute hour day-of-month month day-of-week), local time. See shared/cron.ts. */
+  | { type: 'cron'; expr: string }
 
 export type ScheduleAction =
   | { kind: 'prompt'; prompt: string }
@@ -41,6 +44,10 @@ export interface ScheduledTask {
   when: ScheduleWhen
   /** Run once at the next start / wake-up when a run was missed while the app was closed or the PC asleep. */
   catchUp?: boolean
+  /** Stop the run after this many agentic turns (SDK maxTurns). Prompt runs only. */
+  maxTurns?: number
+  /** End the run with an error when its cost passes this many US dollars. */
+  maxCostUsd?: number
   createdAt: number
   lastRunAt?: number
   nextRunAt?: number
@@ -52,7 +59,19 @@ const Time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'time must be HH:MM')
 export const ScheduleWhenSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('once'), at: z.number().int().positive() }),
   z.object({ type: z.literal('interval'), everyMinutes: z.number().int().min(MIN_INTERVAL_MINUTES).max(60 * 24 * 30) }),
-  z.object({ type: z.literal('daily'), time: Time, days: z.array(z.number().int().min(0).max(6)).max(7) })
+  z.object({ type: z.literal('daily'), time: Time, days: z.array(z.number().int().min(0).max(6)).max(7) }),
+  z.object({
+    type: z.literal('cron'),
+    expr: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .superRefine((v, ctx) => {
+        const err = cronError(v)
+        if (err) ctx.addIssue({ code: 'custom', message: err })
+      })
+  })
 ])
 
 export const ScheduleActionSchema = z.discriminatedUnion('kind', [
@@ -73,7 +92,9 @@ export const ScheduleInputSchema = z.object({
   action: ScheduleActionSchema,
   permissionMode: z.enum(SCHEDULE_MODES).default('default'),
   when: ScheduleWhenSchema,
-  catchUp: z.boolean().default(false)
+  catchUp: z.boolean().default(false),
+  maxTurns: z.number().int().min(1).max(200).optional(),
+  maxCostUsd: z.number().positive().max(10_000).optional()
 })
 export type ScheduleInput = z.input<typeof ScheduleInputSchema>
 
@@ -103,6 +124,8 @@ export function nextRunAfter(
       }
       return undefined
     }
+    case 'cron':
+      return nextCronAfter(when.expr, from)
   }
 }
 
@@ -120,5 +143,7 @@ export function describeWhen(when: ScheduleWhen): string {
       return when.days.length && when.days.length < 7
         ? `${[...when.days].sort().map((d) => DAY_NAMES[d]).join(', ')} at ${when.time}`
         : `Daily at ${when.time}`
+    case 'cron':
+      return `Cron ${when.expr}`
   }
 }
